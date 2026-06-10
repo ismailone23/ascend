@@ -1,14 +1,15 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 import { useColors } from "@/hooks/useColors";
 
-export default function Page2() {
+export default function Page1() {
   const colors = useColors();
 
   return (
     <Animated.View
+      entering={FadeIn.duration(600)}
       style={[
         styles.container,
         {

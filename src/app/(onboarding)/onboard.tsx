@@ -1,35 +1,55 @@
-import Indicator from "@/components/onboardIndicaor";
+import Indicator from "@/components/onboarding/onboardIndicaor";
 import PageOne from "@/components/onboarding/page1";
 import PageTwo from "@/components/onboarding/page2";
 import PageThree from "@/components/onboarding/page3";
-
+import ThemedText from "@/components/ThemedText";
 import { useApp } from "@/context/AppProvider";
 import { useColors } from "@/hooks/useColors";
+import AntDesign from "@expo/vector-icons/AntDesign";
 
 import { useRef, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
 
 import PagerView from "react-native-pager-view";
-import { useSharedValue } from "react-native-reanimated";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
 const TOTAL_PAGES = 3;
 
 export default function Onboard() {
   const colors = useColors();
-
   const [page, setPage] = useState(0);
 
   const pagerRef = useRef<PagerView>(null);
 
   const { completeOnboarding } = useApp();
 
-  const nextPage = () => {
-    if (page < TOTAL_PAGES - 1) {
-      pagerRef.current?.setPage(page + 1);
-    }
-  };
-
   const progress = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(
+        progress.value,
+        [1.5, 2],
+        [0, 1],
+        Extrapolation.CLAMP,
+      ),
+
+      transform: [
+        {
+          translateX: interpolate(
+            progress.value,
+            [1.5, 2],
+            [30, 0],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+    };
+  });
 
   return (
     <View style={{ flex: 1 }}>
@@ -60,33 +80,58 @@ export default function Onboard() {
         ))}
       </View>
       <Pressable onPress={completeOnboarding} style={styles.skipButton}>
-        <Text>Skip</Text>
+        <ThemedText>Skip</ThemedText>
       </Pressable>
 
-      <View style={styles.footer}>
-        {page === TOTAL_PAGES - 1 && (
-          <Pressable
+      <Animated.View
+        pointerEvents={page === TOTAL_PAGES - 1 ? "auto" : "none"}
+        style={[styles.footer, animatedStyle]}
+      >
+        <Pressable
+          style={[
+            styles.primaryButton,
+            {
+              backgroundColor: colors.primary,
+              marginBottom: 16,
+            },
+          ]}
+          onPress={completeOnboarding}
+        >
+          <Text
             style={[
-              styles.button,
+              styles.primaryButtonText,
               {
-                backgroundColor: colors.primary,
+                color: colors.text,
               },
             ]}
-            onPress={page === TOTAL_PAGES - 1 ? completeOnboarding : nextPage}
           >
-            <Text
-              style={[
-                styles.buttonText,
-                {
-                  color: colors.text,
-                },
-              ]}
-            >
-              {page === TOTAL_PAGES - 1 ? "Get Started" : "Continue"}
-            </Text>
-          </Pressable>
-        )}
-      </View>
+            Continue as Guest
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={[
+            styles.googleButton,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <AntDesign name="google" size={18} color={colors.text} />
+
+          <Text
+            style={[
+              styles.googleButtonText,
+              {
+                color: colors.text,
+              },
+            ]}
+          >
+            Continue with Google
+          </Text>
+        </Pressable>
+      </Animated.View>
 
       <StatusBar hidden />
     </View>
@@ -121,16 +166,33 @@ const styles = StyleSheet.create({
     right: 24,
   },
 
-  button: {
+  primaryButton: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 16,
 
     justifyContent: "center",
     alignItems: "center",
   },
 
-  buttonText: {
-    fontWeight: "700",
+  primaryButtonText: {
     fontSize: 16,
+    fontWeight: "700",
+  },
+
+  googleButton: {
+    height: 56,
+    borderRadius: 16,
+
+    borderWidth: 1,
+
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+
+    gap: 10,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

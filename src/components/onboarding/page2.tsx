@@ -1,10 +1,9 @@
 import { useColors } from "@/hooks/useColors";
-import { MaterialIcons } from "@expo/vector-icons";
 import Entypo from "@expo/vector-icons/Entypo";
 import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 
-export default function Page1() {
+export default function Page2() {
   const colors = useColors();
 
   return (
@@ -34,28 +33,6 @@ export default function Page1() {
           },
         ]}
       >
-        <View
-          style={[
-            styles.icon,
-            {
-              backgroundColor: colors.primary,
-            },
-          ]}
-        >
-          <MaterialIcons name="add-task" size={32} color="#111" />
-        </View>
-
-        <Text
-          style={[
-            styles.cardTitle,
-            {
-              color: colors.text,
-            },
-          ]}
-        >
-          Create Habits
-        </Text>
-
         <View style={styles.habitList}>
           <View
             style={[

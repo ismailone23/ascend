@@ -1,5 +1,6 @@
 import { hasSeenOnboarding } from "@/constants/storagekeys";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import {
   createContext,
   useCallback,
@@ -13,7 +14,9 @@ type AppContextType = {
   isOnboarded: boolean;
   completeOnboarding: () => Promise<void>;
 };
-const AppContext = createContext<AppContextType | undefined>(undefined);
+
+export const AppContext = createContext<AppContextType | undefined>(undefined);
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
@@ -32,9 +35,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     init();
   }, []);
 
+  const router = useRouter();
+
   const completeOnboarding = useCallback(async () => {
     try {
       await AsyncStorage.setItem(hasSeenOnboarding, "true");
+      router.push("/(tabs)");
     } catch (error) {
       console.log({ error });
     }

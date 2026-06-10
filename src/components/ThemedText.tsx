@@ -6,7 +6,7 @@ type ThemedTextProps = TextProps & {
   variant?: "body" | "muted" | "heading";
 };
 
-export function ThemedText({
+export default function ThemedText({
   style,
   variant = "body",
   ...props
@@ -16,7 +16,7 @@ export function ThemedText({
   const variantStyles = {
     body: { color: colors.text, fontSize: 14 },
     muted: { color: colors.textMuted, fontSize: 13 },
-    heading: { color: colors.text, fontSize: 22, fontWeight: "700" as const },
+    heading: { color: colors.text, fontSize: 20, fontWeight: "700" as const },
   };
 
   return <Text style={[variantStyles[variant], style]} {...props} />;

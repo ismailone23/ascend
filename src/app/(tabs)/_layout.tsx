@@ -1,9 +1,23 @@
-import { Text, View } from "react-native";
+import Tabbar from "@/components/tab-bar";
+import { useTheme } from "@/context/ThemeContext";
+import { Tabs } from "expo-router";
+import { StatusBar } from "react-native";
 
-export default function TabLayout() {
+export default function TabsLayout() {
+  const { isDark } = useTheme();
   return (
-    <View>
-      <Text>TabLayout</Text>
-    </View>
+    <>
+      <Tabs
+        tabBar={(props) => <Tabbar {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="stats" />
+        <Tabs.Screen name="settings" />
+      </Tabs>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+    </>
   );
 }
