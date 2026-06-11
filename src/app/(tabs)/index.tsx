@@ -1,11 +1,13 @@
 import CreateHabitModal from "@/components/index/create-habit";
 import EmptyIndex from "@/components/index/empty-index";
-import Greeting from "@/components/index/greeting";
+import HabitDetailModal from "@/components/index/habit-detail";
 import HabitList from "@/components/index/habit-list";
 import HeaderIndex from "@/components/index/header-index";
+import ThemedText from "@/components/ThemedText";
 import ThemedView from "@/components/ThemedView";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
+import { Habit } from "@/types/habit";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -15,13 +17,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [showCreateHabit, setShowCreateHabit] = useState(false);
+  const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
   const colors = useColors();
 
-  const { loadHabits, habits } = useHabitStore();
+  const { loadHabits, loadLogs, habits } = useHabitStore();
 
   useEffect(() => {
     loadHabits();
   }, []);
+
+  // Load completion logs whenever the selected date changes
+  useEffect(() => {
+    loadLogs(selectedDate.format("YYYY-MM-DD"));
+  }, [selectedDate]);
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
@@ -31,8 +40,12 @@ export default function Index() {
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
-
-            <Greeting habits={[]} />
+            <ThemedText
+              variant="heading"
+              style={{ paddingHorizontal: 20, paddingVertical: 12 }}
+            >
+              Tasks
+            </ThemedText>
             <EmptyIndex setShowCreateHabit={setShowCreateHabit} />
           </>
         ) : (
@@ -42,6 +55,7 @@ export default function Index() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: 140,
+              gap: 12,
             }}
             ListHeaderComponent={
               <>
@@ -49,19 +63,19 @@ export default function Index() {
                   selectedDate={selectedDate}
                   onSelectDate={setSelectedDate}
                 />
-                <Greeting habits={habits} />
+                <ThemedText
+                  variant="heading"
+                  style={{ paddingHorizontal: 20, paddingVertical: 12 }}
+                >
+                  Tasks
+                </ThemedText>
               </>
             }
             renderItem={({ item }) => (
-              <HabitList habit={item} selectedDate={selectedDate} />
-            )}
-            ItemSeparatorComponent={() => (
-              <ThemedView
-                style={{
-                  height: 1,
-                  backgroundColor: colors.border,
-                  marginHorizontal: 20,
-                }}
+              <HabitList
+                habit={item}
+                selectedDate={selectedDate}
+                onLongPress={() => setDetailHabit(item)}
               />
             )}
           />
@@ -86,9 +100,16 @@ export default function Index() {
             <AntDesign name="plus" size={28} color={colors.background} />
           </Pressable>
         )}
+
         <CreateHabitModal
           visible={showCreateHabit}
           onClose={() => setShowCreateHabit(false)}
+        />
+
+        <HabitDetailModal
+          habit={detailHabit}
+          visible={detailHabit !== null}
+          onClose={() => setDetailHabit(null)}
         />
       </SafeAreaView>
     </ThemedView>

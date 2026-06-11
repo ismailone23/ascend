@@ -26,7 +26,7 @@ export type Habit = {
   title: string;
   comment?: string;
   icon: string;
-  streakTarget: number;
+  dailyGoal: number;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 } & HabitFrequency;
@@ -36,6 +36,7 @@ export type HabitLog = {
   habitId: string;
   date: ISODate;
   completed: boolean;
+  progress: number;
   completedAt: ISODateTime;
 };
 
@@ -58,13 +59,16 @@ export type HabitStats = {
 export type HabitWithStats = Habit & {
   stats: HabitStats;
 };
-export type CreateHabitInput = Omit<Habit, "createdAt" | "updatedAt">;
+export type CreateHabitInput = Omit<
+  Habit,
+  "createdAt" | "updatedAt" | "frequency"
+> &
+  HabitFrequency;
 
 export type HabitStore = {
   habits: Habit[];
   loadHabits: () => Promise<void>;
   addHabit: (habit: CreateHabitInput) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
-  completeHabit(habitId: string, date: string): Promise<void>;
-  incompleteHabit(habitId: string, date: string): Promise<void>;
+  incrementProgress(habit: Habit, date: string): Promise<void>;
 };
