@@ -1,35 +1,45 @@
 export const Colors = {
   light: {
-    background: "#FFFFFF",
-    surface: "#F6F8FA",
+    background: "#FAF8F7",
+    surface: "#FFFFFF",
     card: "#FFFFFF",
 
-    text: "#24292F",
-    textMuted: "#656D76",
+    text: "#2F2A2A",
+    textMuted: "#7A7272",
 
-    primary: "#1793D1",
+    primary: "#C56B6B",
+    primaryLight: "#D98A8A",
+    primaryDark: "#A85757",
 
-    border: "#D0D7DE",
+    border: "#E8DEDE",
 
-    indicator: "#D8DEE4",
-    indicatorActive: "#1793D1",
+    indicator: "#D7CCCC",
+    indicatorActive: "#C56B6B",
+
+    success: "#6B9E7A",
+    warning: "#D9A441",
+    danger: "#D96C6C",
   },
 
   dark: {
-    background: "#0D1117",
-    surface: "#161B22",
-    card: "#1C2128",
+    background: "#161313",
+    surface: "#211D1D",
+    card: "#2A2525",
 
-    text: "#E6EDF3",
-    textMuted: "#8B949E",
+    text: "#F4F1F1",
+    textMuted: "#A89E9E",
 
-    primary: "#1793D1", // Arch blue
-    primaryLight: "#4DB5E8",
-    primaryDark: "#0F6FA8",
+    primary: "#D98A8A",
+    primaryLight: "#E7A8A8",
+    primaryDark: "#C56B6B",
 
-    border: "#30363D",
+    border: "#3A3333",
 
-    indicator: "#484F58",
-    indicatorActive: "#1793D1",
+    indicator: "#514848",
+    indicatorActive: "#D98A8A",
+
+    success: "#7FB08E",
+    warning: "#E0B85A",
+    danger: "#E88989",
   },
 };

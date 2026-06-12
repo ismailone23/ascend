@@ -6,11 +6,11 @@ import ThemedText from "@/components/ThemedText";
 import ThemedView from "@/components/ThemedView";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
-import { Habit } from "@/types/habit";
+import { DayOfWeek, Habit } from "@/types/habit";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import dayjs from "dayjs";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -28,15 +28,11 @@ export default function Index() {
     loadLogs(selectedDate.format("YYYY-MM-DD"));
   }, [selectedDate]);
 
-  const weekday = (() => {
-    try {
-      return selectedDate.format("ddd");
-    } catch (e) {
-      return "Mon";
-    }
-  })();
+  const weekday = selectedDate.format("ddd") as DayOfWeek;
 
-  const filteredHabits = habits.filter((h) => h.days?.includes(weekday as any));
+  const filteredHabits = useMemo(() => {
+    return habits.filter((h) => h.days?.includes(weekday));
+  }, [habits, weekday]);
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -73,19 +69,18 @@ export default function Index() {
             position: "absolute",
             right: 20,
             bottom: 20,
-            paddingHorizontal: 20,
+            paddingLeft: 10,
+            paddingRight: 18,
             height: 56,
             borderRadius: 12,
             backgroundColor: colors.primary,
-            justifyContent: "center",
             alignItems: "center",
             flexDirection: "row",
-            gap: 8,
             elevation: 8,
           }}
           onPress={() => router.push("/create-habit")}
         >
-          <MaterialIcons name="add" size={24} color="#fff" />
+          <MaterialIcons name="add" size={20} color="#fff" />
           <ThemedText
             style={{ color: "#fff", fontWeight: "500", fontSize: 16 }}
           >

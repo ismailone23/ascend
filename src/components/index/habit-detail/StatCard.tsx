@@ -4,7 +4,7 @@ import { Dimensions, StyleSheet, View } from "react-native";
 import ThemedText from "@/components/ThemedText";
 
 interface StatCardProps {
-  icon: string;
+  icon: keyof typeof Octicons.glyphMap;
   label: string;
   value: string | number;
   color: string;
@@ -28,7 +28,7 @@ export default function StatCard({
       ]}
     >
       <View style={[styles.statIconWrap, { backgroundColor: `${color}18` }]} accessibilityElementsHidden>
-        <Octicons name={icon as any} size={16} color={color} />
+        <Octicons name={icon} size={16} color={color} />
       </View>
       <ThemedText style={styles.statValue} aria-hidden>{value}</ThemedText>
       <ThemedText variant="muted" style={styles.statLabel} aria-hidden>

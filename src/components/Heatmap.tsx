@@ -1,6 +1,6 @@
 import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import {
   ScrollView,
   StyleProp,
@@ -9,18 +9,12 @@ import {
   ViewStyle,
 } from "react-native";
 import Svg, { Rect, Text as SvgText } from "react-native-svg";
+import { toLocalDate } from "@/lib/date";
 
 const WEEKS = 52;
 const CELL_SIZE = 12;
 const CELL_GAP = 3;
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
-
-function toLocalDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 interface HeatmapProps {
   /** Map of date (YYYY-MM-DD) to numeric value, or a Set of completed dates */
@@ -67,7 +61,7 @@ export default function Heatmap({
   }, [data]);
 
   // Color resolver
-  const defaultGetCellColor = (
+  const defaultGetCellColor = useCallback((
     val: number,
     themeColors: ReturnType<typeof useColors>,
   ) => {
@@ -95,52 +89,59 @@ export default function Heatmap({
 
     // Fallback: treat any positive number as full
     return { fill: themeColors.primary, fillOpacity: 1 };
-  };
+  }, [getCellColor, legendValues]);
 
-  const today = new Date();
-  today.setHours(12, 0, 0, 0); // Avoid DST skips
-  const todayStr = toLocalDateStr(today);
-  const grid: { date: string; count: number }[][] = [];
+  const { grid, todayStr } = useMemo(() => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0); // Avoid DST skips
+    const todayStr = toLocalDate(today);
+    const computedGrid: { date: string; count: number }[][] = [];
 
-  const currentDayOfWeek = today.getDay();
-  const currentSunday = new Date(today);
-  currentSunday.setDate(today.getDate() - currentDayOfWeek);
+    const currentDayOfWeek = today.getDay();
+    const currentSunday = new Date(today);
+    currentSunday.setDate(today.getDate() - currentDayOfWeek);
 
-  const startDate = new Date(currentSunday);
-  startDate.setDate(currentSunday.getDate() - (WEEKS - 1) * 7);
+    const startDate = new Date(currentSunday);
+    startDate.setDate(currentSunday.getDate() - (WEEKS - 1) * 7);
 
-  const cursor = new Date(startDate);
-  for (let w = 0; w < WEEKS; w++) {
-    const week: { date: string; count: number }[] = [];
-    for (let d = 0; d < 7; d++) {
-      const dateStr = toLocalDateStr(cursor);
-      const isFuture = dateStr > todayStr;
-      week.push({
-        date: dateStr,
-        count: isFuture ? 0 : normalizedData[dateStr] || 0,
-      });
-      cursor.setDate(cursor.getDate() + 1);
+    const cursor = new Date(startDate);
+    for (let w = 0; w < WEEKS; w++) {
+      const week: { date: string; count: number }[] = [];
+      for (let d = 0; d < 7; d++) {
+        const dateStr = toLocalDate(cursor);
+        const isFuture = dateStr > todayStr;
+        week.push({
+          date: dateStr,
+          count: isFuture ? 0 : normalizedData[dateStr] || 0,
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      computedGrid.push(week);
     }
-    grid.push(week);
-  }
+    return { grid: computedGrid, todayStr };
+  }, [normalizedData]);
 
   const labelWidth = 28;
   const svgWidth = labelWidth + WEEKS * (CELL_SIZE + CELL_GAP);
   const svgHeight = 7 * (CELL_SIZE + CELL_GAP) + 20; // +20 for month labels
 
-  const monthLabels: { text: string; x: number }[] = [];
-  let lastMonth = -1;
-  for (let w = 0; w < WEEKS; w++) {
-    const firstDayOfWeek = new Date(grid[w][0].date + "T00:00:00");
-    const month = firstDayOfWeek.getMonth();
-    if (month !== lastMonth) {
-      monthLabels.push({
-        text: firstDayOfWeek.toLocaleDateString("en-US", { month: "short" }),
-        x: labelWidth + w * (CELL_SIZE + CELL_GAP),
-      });
-      lastMonth = month;
+  const monthLabels = useMemo(() => {
+    const labels: { text: string; x: number }[] = [];
+    let lastMonth = -1;
+    for (let w = 0; w < WEEKS; w++) {
+      if (!grid[w] || grid[w].length === 0) continue;
+      const firstDayOfWeek = new Date(grid[w][0].date + "T00:00:00");
+      const month = firstDayOfWeek.getMonth();
+      if (month !== lastMonth) {
+        labels.push({
+          text: firstDayOfWeek.toLocaleDateString("en-US", { month: "short" }),
+          x: labelWidth + w * (CELL_SIZE + CELL_GAP),
+        });
+        lastMonth = month;
+      }
     }
-  }
+    return labels;
+  }, [grid]);
 
   return (
     <View style={[styles.container, containerStyle]}>

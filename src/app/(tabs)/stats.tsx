@@ -1,3 +1,4 @@
+import IconView from "@/components/IconView";
 import ThemedText from "@/components/ThemedText";
 import { OverallHeatmap } from "@/components/stats/OverallHeatmap";
 import { useColors } from "@/hooks/useColors";
@@ -133,7 +134,7 @@ export default function Stats() {
                     ]}
                   >
                     <View style={styles.habitIconWrapper} accessibilityElementsHidden>
-                      <ThemedText style={styles.habitIcon}>{habit.icon}</ThemedText>
+                      <IconView iconKey={habit.icon} size={20} />
                     </View>
                     <View style={styles.habitInfo}>
                       <ThemedText style={styles.habitTitle}>{habit.title}</ThemedText>
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    minWidth: "45%",
+    minWidth: "40%",
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,

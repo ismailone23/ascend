@@ -19,7 +19,6 @@ export default function TabsLayout() {
             backgroundColor: colors.surface,
             borderTopWidth: 0,
           },
-          tabBarIcon: ({ color }) => <MaterialIcons size={28} color={color} />,
         }}
         screenListeners={{
           tabLongPress: () => {},
@@ -39,7 +38,7 @@ export default function TabsLayout() {
           options={{
             title: "Stats",
             tabBarIcon: ({ color }) => (
-              <MaterialIcons name="bar-chart" size={28} color={color} />
+              <MaterialIcons name="leaderboard" size={28} color={color} />
             ),
           }}
         />

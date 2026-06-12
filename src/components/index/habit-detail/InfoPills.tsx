@@ -4,20 +4,7 @@ import { HabitStatsResult } from "@/repositories/log.repository";
 import { Octicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 import ThemedText from "@/components/ThemedText";
-
-function getFrequencyLabel(habit: Habit): string {
-  if (!habit.days || habit.days.length === 0) return "";
-  if (habit.days.length === 7) return "Daily";
-  return habit.days.join(", ");
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { getFrequencyLabel, formatDate } from "@/lib/habit-utils";
 
 interface InfoPillsProps {
   habit: Habit;
@@ -26,7 +13,7 @@ interface InfoPillsProps {
 
 export default function InfoPills({ habit, stats }: InfoPillsProps) {
   const colors = useColors();
-  const frequencyLabel = getFrequencyLabel(habit);
+  const frequencyLabel = getFrequencyLabel(habit, "Daily");
 
   return (
     <View style={styles.pillRow} accessibilityRole="list" accessibilityLabel="Habit details">

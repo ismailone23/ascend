@@ -1,5 +1,5 @@
 import { useColors } from "@/hooks/useColors";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Animated, Pressable, StyleSheet } from "react-native";
 
 type Props = {
@@ -18,20 +18,22 @@ export default function Switch({ value, onValueChange }: Props) {
   const translateX = useRef(new Animated.Value(value ? TRAVEL : 0)).current;
   const colorAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
 
-  const toggle = () => {
-    const toValue = value ? 0 : 1;
+  useEffect(() => {
     Animated.parallel([
       Animated.spring(translateX, {
-        toValue: toValue === 1 ? TRAVEL : 0,
+        toValue: value ? TRAVEL : 0,
         useNativeDriver: true,
         bounciness: 4,
       }),
       Animated.timing(colorAnim, {
-        toValue,
+        toValue: value ? 1 : 0,
         duration: 200,
         useNativeDriver: false,
       }),
     ]).start();
+  }, [value]);
+
+  const toggle = () => {
     onValueChange(!value);
   };
 

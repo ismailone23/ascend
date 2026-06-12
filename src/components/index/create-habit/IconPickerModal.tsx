@@ -15,7 +15,7 @@ import ThemedText from "../../ThemedText";
 
 type IconDef = {
   name: string;
-  lib: React.ComponentType<{ name: string; size: number; color: string }>;
+  lib: React.ComponentType<any>;
   key: string; // unique string ID to store/compare
 };
 
@@ -29,13 +29,18 @@ const makeIcon = (
   key: `${libLabel}::${name}`,
 });
 
-const mc = (name: string) =>
-  makeIcon(MaterialCommunityIcons as any, name, "mc");
-const io = (name: string) => makeIcon(Ionicons as any, name, "io");
-const fa = (name: string) => makeIcon(FontAwesome5 as any, name, "fa");
-const fe = (name: string) => makeIcon(Feather as any, name, "fe");
+const mc = (name: string) => makeIcon(MaterialCommunityIcons, name, "mc");
+const io = (name: string) => makeIcon(Ionicons, name, "io");
+const fa = (name: string) => makeIcon(FontAwesome5, name, "fa");
+const fe = (name: string) => makeIcon(Feather, name, "fe");
 
-const CATEGORIES = [
+type Category = {
+  id: string;
+  label: string;
+  icons?: IconDef[];
+};
+
+const CATEGORIES: Category[] = [
   { id: "all", label: "All" },
   {
     id: "fitness",
@@ -136,7 +141,7 @@ const CATEGORIES = [
 ];
 
 const ALL_ICONS: IconDef[] = CATEGORIES.filter((c) => c.id !== "all").flatMap(
-  (c) => (c as any).icons as IconDef[],
+  (c) => c.icons || [],
 );
 
 type Props = {
@@ -158,10 +163,7 @@ export default function IconPickerModal({
 
   const filteredIcons = useMemo<IconDef[]>(() => {
     if (activeCategory === "all") return ALL_ICONS;
-    return (
-      ((CATEGORIES.find((c) => c.id === activeCategory) as any)
-        ?.icons as IconDef[]) || []
-    );
+    return CATEGORIES.find((c) => c.id === activeCategory)?.icons || [];
   }, [activeCategory]);
 
   return (

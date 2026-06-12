@@ -19,8 +19,6 @@ import DetailHeader from "./habit-detail/DetailHeader";
 import InfoPills from "./habit-detail/InfoPills";
 import StatCard from "./habit-detail/StatCard";
 
-const WEEKS = 52;
-
 type Props = {
   habit: Habit | null;
   visible: boolean;
@@ -41,12 +39,14 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     if (visible && habit) {
       setLoading(true);
       Promise.all([
         logRepository.getHabitStats(habit.id),
-        logRepository.getHabitProgress(habit.id, WEEKS * 7),
+        logRepository.getHabitProgress(habit.id, 364),
       ]).then(([s, progressRec]) => {
+        if (!active) return;
         setStats(s);
         // Normalize progress to a 0..1 ratio using habit.dailyGoal
         const normalized: Record<string, number> = {};
@@ -62,7 +62,10 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
         setLoading(false);
       });
     }
-  }, [visible, habit?.id]);
+    return () => {
+      active = false;
+    };
+  }, [visible, habit]);
 
   const handleDelete = useCallback(() => {
     if (!habit) return;

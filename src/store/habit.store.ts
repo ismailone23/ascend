@@ -1,4 +1,4 @@
-import { habitrepositry } from "@/repositories/habit.repository";
+import { habitRepository } from "@/repositories/habit.repository";
 import { logRepository } from "@/repositories/log.repository";
 import {
     cancelHabitReminders,
@@ -24,7 +24,7 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
   appWideLogs: {},
 
   async loadHabits() {
-    const habits = await habitrepositry.getAll();
+    const habits = await habitRepository.getAll();
     set({ habits });
     await get().loadAllStats();
   },
@@ -51,7 +51,7 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
   },
 
   async addHabit(input: CreateHabitInput) {
-    await habitrepositry.create(input);
+    await habitRepository.create(input);
 
     // Schedule notifications if enabled
     if (input.reminderEnabled && input.reminderTimes.length > 0) {
@@ -66,33 +66,33 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
         };
         const notificationIds =
           await scheduleHabitReminders(habitForScheduling);
-        await habitrepositry.saveNotificationIds(input.id, notificationIds);
+        await habitRepository.saveNotificationIds(input.id, notificationIds);
       }
     }
 
-    const habits = await habitrepositry.getAll();
+    const habits = await habitRepository.getAll();
     set({ habits });
   },
 
   async deleteHabit(id: string) {
     // Cancel notifications before deleting (FK cascade will remove reminders row)
-    const notificationIds = await habitrepositry.getNotificationIds(id);
+    const notificationIds = await habitRepository.getNotificationIds(id);
     if (notificationIds.length > 0) {
       await cancelHabitReminders(notificationIds);
     }
 
-    await habitrepositry.delete(id);
-    const habits = await habitrepositry.getAll();
+    await habitRepository.delete(id);
+    const habits = await habitRepository.getAll();
     set({ habits });
   },
 
   // Call this when user edits reminder times or toggles reminder on/off
   async updateHabitReminder(habit: Habit) {
     // Always cancel existing notifications first
-    const existingIds = await habitrepositry.getNotificationIds(habit.id);
+    const existingIds = await habitRepository.getNotificationIds(habit.id);
     if (existingIds.length > 0) {
       await cancelHabitReminders(existingIds);
-      await habitrepositry.saveNotificationIds(habit.id, []);
+      await habitRepository.saveNotificationIds(habit.id, []);
     }
 
     // Re-schedule only if still enabled
@@ -100,11 +100,11 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
       const granted = await requestPermissions();
       if (granted) {
         const notificationIds = await scheduleHabitReminders(habit);
-        await habitrepositry.saveNotificationIds(habit.id, notificationIds);
+        await habitRepository.saveNotificationIds(habit.id, notificationIds);
       }
     }
 
-    const habits = await habitrepositry.getAll();
+    const habits = await habitRepository.getAll();
     set({ habits });
   },
 
@@ -130,7 +130,7 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
       );
     }
 
-    const habits = await habitrepositry.getAll();
+    const habits = await habitRepository.getAll();
     const logs = await logRepository.getLogsForDate(date);
     const dailyLogs: Record<
       string,

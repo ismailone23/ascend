@@ -5,7 +5,6 @@ import PageThree from "@/components/onboarding/page3";
 import ThemedText from "@/components/ThemedText";
 import { useApp } from "@/context/AppProvider";
 import { useColors } from "@/hooks/useColors";
-import AntDesign from "@expo/vector-icons/AntDesign";
 
 import { useRef, useState } from "react";
 import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
@@ -105,30 +104,7 @@ export default function Onboard() {
               },
             ]}
           >
-            Continue as Guest
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.googleButton,
-            {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <AntDesign name="google" size={18} color={colors.text} />
-
-          <Text
-            style={[
-              styles.googleButtonText,
-              {
-                color: colors.text,
-              },
-            ]}
-          >
-            Continue with Google
+            Let's Build Habit
           </Text>
         </Pressable>
       </Animated.View>
@@ -146,11 +122,6 @@ const styles = StyleSheet.create({
 
     flexDirection: "row",
     gap: 8,
-  },
-
-  dot: {
-    height: 8,
-    borderRadius: 999,
   },
 
   skipButton: {

@@ -3,6 +3,30 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
+interface SettingItem {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+}
+
+const SETTINGS_ITEMS: SettingItem[] = [
+  {
+    icon: "flag",
+    label: "Goals",
+  },
+  {
+    icon: "lock",
+    label: "Privacy",
+  },
+  {
+    icon: "help-outline",
+    label: "Help & Support",
+  },
+  {
+    icon: "info-outline",
+    label: "About",
+  },
+];
+
 export default function GeneralSettings() {
   const colors = useColors();
   return (
@@ -29,29 +53,12 @@ export default function GeneralSettings() {
           },
         ]}
       >
-        {[
-          {
-            icon: "flag",
-            label: "Goals",
-          },
-          {
-            icon: "lock",
-            label: "Privacy",
-          },
-          {
-            icon: "help-outline",
-            label: "Help & Support",
-          },
-          {
-            icon: "info-outline",
-            label: "About",
-          },
-        ].map((item, index) => (
+        {SETTINGS_ITEMS.map((item, index) => (
           <View key={item.label}>
             <Pressable style={styles.settingRow}>
               <View style={styles.settingLeft}>
                 <MaterialIcons
-                  name={item.icon as any}
+                  name={item.icon}
                   size={22}
                   color={colors.primary}
                 />

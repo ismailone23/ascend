@@ -1,7 +1,7 @@
 import { db } from "@/db/sqlite";
 import { CreateHabitInput, Habit } from "@/types/habit";
 
-export const habitrepositry = {
+export const habitRepository = {
   async getAll(): Promise<Habit[]> {
     try {
       const rows = await db.getAllAsync<any>(`
@@ -23,7 +23,7 @@ export const habitrepositry = {
         updatedAt: row.updated_at,
       }));
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[HabitRepo]", error);
       return [];
     }
   },
@@ -83,7 +83,7 @@ export const habitrepositry = {
         ],
       );
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[HabitRepo]", error);
     }
   },
   async delete(id: string) {

@@ -5,7 +5,7 @@ import { useHabitStore } from "@/store/habit.store";
 import { Habit } from "@/types/habit";
 import { Dayjs } from "dayjs";
 import * as Haptics from "expo-haptics";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -14,13 +14,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { getFrequencyLabel } from "@/lib/habit-utils";
 
-function getFrequencyLabel(habit: Habit): string {
-  if (!habit.days || habit.days.length === 0) return "";
-  if (habit.days.length === 7) return "Every Day";
-  return habit.days.join(", ");
-}
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HabitList({
   habit,
@@ -37,6 +33,17 @@ export default function HabitList({
   const { isCompleted, progress } = log;
 
   const clampedProgress = Math.min(progress, habit.dailyGoal);
+  const progressPercent = habit.dailyGoal > 0 ? (clampedProgress / habit.dailyGoal) * 100 : 0;
+
+  const animProgress = useSharedValue(progressPercent);
+
+  useEffect(() => {
+    animProgress.value = withTiming(progressPercent, { duration: 250 });
+  }, [progressPercent]);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${animProgress.value}%`,
+  }));
 
   const scale = useSharedValue(1);
 
@@ -88,7 +95,7 @@ export default function HabitList({
             { backgroundColor: colors.primary + "33" },
           ]}
         >
-          <IconView iconKey={habit.icon} size={26} circle={false} />
+          <IconView iconKey={habit.icon} size={24} circle={false} />
         </View>
 
         {/* Middle: title + frequency */}
@@ -123,6 +130,17 @@ export default function HabitList({
             </Text>
           </View>
         </Pressable>
+      </View>
+      <View style={[styles.progressBarBg, { backgroundColor: colors.border + "4D" }]}>
+        <Animated.View
+          style={[
+            styles.progressBarFill,
+            {
+              backgroundColor: colors.primary,
+            },
+            progressStyle,
+          ]}
+        />
       </View>
     </AnimatedPressable>
   );
@@ -172,5 +190,13 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 14,
     fontWeight: "700",
+  },
+  progressBarBg: {
+    height: 4,
+    width: "100%",
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
   },
 });

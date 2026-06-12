@@ -59,10 +59,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  headerEmoji: {
-    fontSize: 28,
-  },
-
   headerText: {
     flex: 1,
     marginLeft: 14,

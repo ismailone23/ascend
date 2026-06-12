@@ -8,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { initializeDatabase } from "@/db/schema";
 
 type AppContextType = {
   isReady: boolean;
@@ -24,9 +25,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function init() {
       try {
+        await initializeDatabase();
         const value = await AsyncStorage.getItem(hasSeenOnboarding);
 
         setIsOnboarded(value === "true");
+      } catch (error) {
+        if (__DEV__) console.warn("Database initialization failed:", error);
       } finally {
         setIsReady(true);
       }
@@ -42,7 +46,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.setItem(hasSeenOnboarding, "true");
       router.push("/(tabs)");
     } catch (error) {
-      console.log({ error });
+      // Quietly ignore storage write error in production
     }
   }, []);
 

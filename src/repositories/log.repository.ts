@@ -1,13 +1,6 @@
 import { db } from "@/db/sqlite";
 import { HabitStats } from "@/types/habit";
-
-/** Format Date as YYYY-MM-DD in local timezone (matches dayjs format) */
-function toLocalDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+import { toLocalDate } from "@/lib/date";
 
 export type HabitLogRow = {
   date: string;
@@ -35,7 +28,7 @@ export const logRepository = {
         [date],
       );
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return [];
     }
   },
@@ -55,7 +48,7 @@ export const logRepository = {
       );
       return rows.map((r) => r.date);
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return [];
     }
   },
@@ -82,7 +75,7 @@ export const logRepository = {
       }
       return result;
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return {};
     }
   },
@@ -109,7 +102,7 @@ export const logRepository = {
       }
       return result;
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return {};
     }
   },
@@ -182,7 +175,7 @@ export const logRepository = {
 
       return { currentStreak, bestStreak, totalCompletions, completionRate };
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return {
         currentStreak: 0,
         bestStreak: 0,
@@ -262,7 +255,7 @@ export const logRepository = {
 
       return stats;
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
       return {};
     }
   },
@@ -296,7 +289,7 @@ export const logRepository = {
         ],
       );
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
     }
   },
 
@@ -311,7 +304,7 @@ export const logRepository = {
         [habitId, date],
       );
     } catch (error) {
-      console.log({ error });
+      if (__DEV__) console.warn("[LogRepo]", error);
     }
   },
 };

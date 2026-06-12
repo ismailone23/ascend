@@ -1,5 +1,4 @@
 import { AppProvider, useApp } from "@/context/AppProvider";
-import { HabitProvider } from "@/context/HabitProvider";
 import ThemeProvider from "@/context/ThemeContext";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -11,9 +10,7 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <ThemeProvider>
-        <HabitProvider>
-          <InsideLayout />
-        </HabitProvider>
+        <InsideLayout />
       </ThemeProvider>
     </AppProvider>
   );

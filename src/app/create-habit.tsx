@@ -11,6 +11,7 @@ import { requestPermissions } from "@/services/notificationService";
 import { useHabitStore } from "@/store/habit.store";
 import { DayOfWeek } from "@/types/habit";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import dayjs from "dayjs";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import {
   Animated,
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -52,7 +54,9 @@ export default function CreateHabit() {
   const [title, setTitle] = useState("");
   const [openIcon, setOpenIcon] = useState(false);
   const [selectedIcon, setSelectedIcon] = useState("mc::hiking");
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(["Sun"]);
+  const day = dayjs().format('ddd') as DayOfWeek;
+
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([day]);
 
   const [reminder, setReminder] = useState(false);
   const [reminderTimes, setReminderTimes] = useState<string[]>([]);
@@ -122,108 +126,194 @@ export default function CreateHabit() {
       duration: 220,
       useNativeDriver: false,
     }).start();
-  }, [reminder]);
+  }, [reminder, expandAnim]);
   return (
     <>
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.background }}
         edges={["top"]}
       >
-        <ThemedView style={{ flex: 1, padding: 20, gap: 20 }}>
-          <View style={{ flexDirection: "row" }}>
-            <Pressable onPress={handleGoBack}>
-              <AntDesign name="arrow-left" size={24} color={colors.text} />
-            </Pressable>
-            <ThemedText
-              variant="heading"
-              style={{ flex: 1, textAlign: "center" }}
-            >
-              New Habit
-            </ThemedText>
-          </View>
+        <ScrollView style={{ flex: 1 }}>
+          <ThemedView style={{ flex: 1, padding: 20, gap: 20 }}>
+            <View style={{ flexDirection: "row" }}>
+              <Pressable onPress={handleGoBack}>
+                <AntDesign name="arrow-left" size={24} color={colors.text} />
+              </Pressable>
+              <ThemedText
+                variant="heading"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                New Habit
+              </ThemedText>
+            </View>
 
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Pressable
+            <View
               style={{
                 alignItems: "center",
                 justifyContent: "center",
-                width: 80,
-                height: 80,
-                borderRadius: 24,
-                borderWidth: 2,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
               }}
-              onPress={() => setOpenIcon(true)}
             >
-              <IconView iconKey={selectedIcon} size={32} />
-            </Pressable>
-          </View>
-
-          <View>
-            <TextInput
-              placeholder="Habit Name"
-              value={title}
-              onChangeText={setTitle}
-              placeholderTextColor={colors.textMuted}
-              style={{
-                paddingHorizontal: 20,
-                lineHeight: 36,
-                borderRadius: 16,
-                fontSize: 16,
-                backgroundColor: colors.surface,
-                color: colors.text,
-              }}
-            />
-          </View>
-          <View style={{ gap: 5 }}>
-            <View
-              style={[
-                styles.card,
-                {
+              <Pressable
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 80,
+                  height: 80,
+                  borderRadius: 24,
+                  borderWidth: 2,
+                  borderColor: colors.border,
                   backgroundColor: colors.surface,
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  borderBottomLeftRadius: 8,
-                  borderBottomRightRadius: 8,
-                },
-              ]}
-            >
-              <ThemedText style={{ fontSize: 16 }}>Repeat</ThemedText>
-              <View style={{ gap: 2, flexDirection: "row" }}>
-                {Object.entries(week).map(([key, value], index) => (
-                  <Pressable
-                    key={key}
-                    onPress={() => toggleDay(value)}
-                    style={{
-                      backgroundColor: selectedDays.includes(value)
-                        ? colors.primary
-                        : colors.border,
-                      borderTopLeftRadius: index == 0 ? 10 : 0,
-                      borderBottomLeftRadius: index == 0 ? 10 : 0,
-                      padding: 10,
-                      borderTopRightRadius: index == 6 ? 10 : 0,
-                      borderBottomRightRadius: index == 6 ? 10 : 0,
-                    }}
-                  >
-                    <ThemedText
+                }}
+                onPress={() => setOpenIcon(true)}
+              >
+                <IconView iconKey={selectedIcon} size={32} />
+              </Pressable>
+            </View>
+
+            <View>
+              <TextInput
+                placeholder="Habit Name"
+                value={title}
+                onChangeText={setTitle}
+                placeholderTextColor={colors.textMuted}
+                style={{
+                  paddingHorizontal: 20,
+                  lineHeight: 36,
+                  borderRadius: 16,
+                  fontSize: 16,
+                  backgroundColor: colors.surface,
+                  color: colors.text,
+                }}
+              />
+            </View>
+            <View style={{ gap: 5 }}>
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: colors.surface,
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
+                    borderBottomLeftRadius: 8,
+                    borderBottomRightRadius: 8,
+                  },
+                ]}
+              >
+                <ThemedText style={{ fontSize: 16 }}>Repeat</ThemedText>
+                <View style={{ gap: 2, flexDirection: "row" }}>
+                  {Object.entries(week).map(([key, value], index) => (
+                    <Pressable
+                      key={key}
+                      onPress={() => toggleDay(value)}
                       style={{
-                        color: selectedDays.includes(value)
-                          ? "#fff"
-                          : colors.text,
-                        fontSize: 12,
-                        textTransform: "capitalize",
+                        backgroundColor: selectedDays.includes(value)
+                          ? colors.primary
+                          : colors.border,
+                        borderTopLeftRadius: index == 0 ? 10 : 0,
+                        borderBottomLeftRadius: index == 0 ? 10 : 0,
+                        padding: 10,
+                        borderTopRightRadius: index == 6 ? 10 : 0,
+                        borderBottomRightRadius: index == 6 ? 10 : 0,
                       }}
                     >
-                      {key}
-                    </ThemedText>
+                      <ThemedText
+                        style={{
+                          color: selectedDays.includes(value)
+                            ? "#fff"
+                            : colors.text,
+                          fontSize: 12,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {key}
+                      </ThemedText>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                  },
+                ]}
+              >
+                <View>
+                  <ThemedText style={{ fontSize: 16 }}>Frequency</ThemedText>
+                  <ThemedText style={{ fontSize: 14 }}>
+                    Completion per day
+                  </ThemedText>
+                </View>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                >
+                  <Pressable
+                    onPress={() => setDailyGoal((g) => Math.max(1, g - 1))}
+                    style={{
+                      backgroundColor: colors.border,
+                      width: 40,
+                      height: 40,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 99,
+                    }}
+                  >
+                    <AntDesign name="minus" size={16} color={colors.text} />
                   </Pressable>
-                ))}
+                  <ThemedText style={{ fontSize: 16, fontWeight: 500 }}>
+                    {dailyGoal}
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => setDailyGoal((g) => g + 1)}
+                    style={{
+                      backgroundColor: colors.border,
+                      width: 40,
+                      height: 40,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 99,
+                    }}
+                  >
+                    <AntDesign name="plus" size={16} color={colors.text} />
+                  </Pressable>
+                </View>
+              </View>
+              <View
+                style={[
+                  {
+                    backgroundColor: colors.surface,
+                    borderTopLeftRadius: 8,
+                    borderTopRightRadius: 8,
+                    borderBottomLeftRadius: 16,
+                    borderBottomRightRadius: 16,
+                  },
+                ]}
+              >
+                <View style={styles.card}>
+                  <View>
+                    <ThemedText style={{ fontSize: 16 }}>Reminder</ThemedText>
+                    <ThemedText style={{ fontSize: 14, opacity: 0.5 }}>
+                      Receive notification
+                    </ThemedText>
+                  </View>
+                  <Switch onValueChange={handleReminderToggle} value={reminder} />
+                </View>
+                {reminder && (
+                  <Animated.View
+                    style={{ opacity: expandAnim, overflow: "hidden" }}
+                  >
+                    <View
+                      style={{
+                        height: 1,
+                        backgroundColor: colors.border,
+                        marginVertical: 4,
+                      }}
+                    />
+                    <ReminderPicker onTimesChange={setReminderTimes} />
+                  </Animated.View>
+                )}
               </View>
             </View>
             <View
@@ -231,123 +321,38 @@ export default function CreateHabit() {
                 styles.card,
                 {
                   backgroundColor: colors.surface,
-                  borderRadius: 8,
+                  borderRadius: 16,
                 },
               ]}
             >
-              <View>
-                <ThemedText style={{ fontSize: 16 }}>Frequency</ThemedText>
-                <ThemedText style={{ fontSize: 14 }}>
-                  Completion per day
-                </ThemedText>
-              </View>
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-              >
-                <Pressable
-                  onPress={() => setDailyGoal((g) => Math.max(1, g - 1))}
-                  style={{
-                    backgroundColor: colors.border,
-                    width: 40,
-                    height: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 99,
-                  }}
-                >
-                  <AntDesign name="minus" size={16} color={colors.text} />
-                </Pressable>
-                <ThemedText style={{ fontSize: 16, fontWeight: 500 }}>
-                  {dailyGoal}
-                </ThemedText>
-                <Pressable
-                  onPress={() => setDailyGoal((g) => g + 1)}
-                  style={{
-                    backgroundColor: colors.border,
-                    width: 40,
-                    height: 40,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: 99,
-                  }}
-                >
-                  <AntDesign name="plus" size={16} color={colors.text} />
-                </Pressable>
-              </View>
+              <ThemedText style={{ fontSize: 16 }}>Streak Goal</ThemedText>
+              <Dropdown
+                options={["Day", "Week", "Month"]}
+                value={streakGoal}
+                onChange={(val) => setStreakGoal(val as "Day" | "Week" | "Month")}
+              />
             </View>
-            <View
-              style={[
-                {
+
+            <View>
+              <ThemedText style={{ paddingVertical: 10 }}>Optional</ThemedText>
+              <TextInput
+                style={{
+                  height: 120,
+                  textAlignVertical: "top",
+                  paddingHorizontal: 16,
                   backgroundColor: colors.surface,
-                  borderTopLeftRadius: 8,
-                  borderTopRightRadius: 8,
-                  borderBottomLeftRadius: 16,
-                  borderBottomRightRadius: 16,
-                },
-              ]}
-            >
-              <View style={styles.card}>
-                <View>
-                  <ThemedText style={{ fontSize: 16 }}>Reminder</ThemedText>
-                  <ThemedText style={{ fontSize: 14, opacity: 0.5 }}>
-                    Receive notification
-                  </ThemedText>
-                </View>
-                <Switch onValueChange={handleReminderToggle} value={reminder} />
-              </View>
-              {reminder && (
-                <Animated.View
-                  style={{ opacity: expandAnim, overflow: "hidden" }}
-                >
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: colors.border,
-                      marginVertical: 4,
-                    }}
-                  />
-                  <ReminderPicker onTimesChange={setReminderTimes} />
-                </Animated.View>
-              )}
+                  borderRadius: 16,
+                  color: colors.text,
+                }}
+                placeholder="Comment...."
+                placeholderTextColor={colors.textMuted}
+                value={comment}
+                onChangeText={setComment}
+                multiline
+              />
             </View>
-          </View>
-          <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-              },
-            ]}
-          >
-            <ThemedText style={{ fontSize: 16 }}>Streak Goal</ThemedText>
-            <Dropdown
-              options={["Day", "Week", "Month"]}
-              value={streakGoal}
-              onChange={(val) => setStreakGoal(val as "Day" | "Week" | "Month")}
-            />
-          </View>
-
-          <View>
-            <ThemedText style={{ paddingVertical: 10 }}>Optional</ThemedText>
-            <TextInput
-              style={{
-                height: 120,
-                textAlignVertical: "top",
-                paddingHorizontal: 16,
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                color: colors.text,
-              }}
-              placeholder="Comment...."
-              placeholderTextColor={colors.textMuted}
-              value={comment}
-              onChangeText={setComment}
-              multiline
-            />
-          </View>
-        </ThemedView>
-
+          </ThemedView>
+        </ScrollView>
         <IconPickerModal
           onClose={() => setOpenIcon(false)}
           onSelectIcon={setSelectedIcon}
@@ -381,10 +386,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  reminderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
 });

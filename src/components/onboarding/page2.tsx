@@ -124,20 +124,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  icon: {
-    width: 72,
-    height: 72,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  cardTitle: {
-    marginTop: 16,
-    fontSize: 20,
-    fontWeight: "700",
-  },
-
   habitList: {
     marginTop: 20,
     width: "100%",

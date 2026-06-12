@@ -4,6 +4,7 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { Colors } from "@/constants/colors";
 
 export default function Indicator({
   index,
@@ -12,7 +13,7 @@ export default function Indicator({
 }: {
   index: number;
   progress: SharedValue<number>;
-  colors: any;
+  colors: typeof Colors.light | typeof Colors.dark;
 }) {
   const animatedStyle = useAnimatedStyle(() => {
     const width = interpolate(

@@ -1,17 +1,85 @@
+import Switch from "@/components/switch";
+import { notificationsKey, weeklyReportsKey } from "@/constants/storagekeys";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+import {
+  checkNotificationPermission,
+  requestPermissions,
+} from "@/services/notificationService";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 
 export default function Preferences() {
   const { isDark, toggleTheme } = useTheme();
 
-  const [notifications, setNotifications] = useState(true);
-
+  const [notifications, setNotifications] = useState(false);
   const [weeklyReports, setWeeklyReports] = useState(false);
   const colors = useColors();
+
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const hasPermission = await checkNotificationPermission();
+        const storedNotif = await AsyncStorage.getItem(notificationsKey);
+        const storedWeekly = await AsyncStorage.getItem(weeklyReportsKey);
+
+        // Forced to false if system permission is disabled, otherwise defaults to true
+        const notifEnabled = hasPermission && storedNotif !== "false";
+        setNotifications(notifEnabled);
+        setWeeklyReports(hasPermission && storedWeekly === "true");
+      } catch (error) {
+        if (__DEV__) console.warn("Failed to load preferences:", error);
+      }
+    }
+    loadPreferences();
+  }, []);
+
+  const handleNotificationsToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestPermissions();
+      if (granted) {
+        setNotifications(true);
+        await AsyncStorage.setItem(notificationsKey, "true");
+      } else {
+        setNotifications(false);
+        await AsyncStorage.setItem(notificationsKey, "false");
+        Alert.alert(
+          "Permission Required",
+          "Please enable notification permissions in your system settings to receive reminders."
+        );
+      }
+    } else {
+      setNotifications(false);
+      await AsyncStorage.setItem(notificationsKey, "false");
+      // If notifications are disabled, weekly reports should also be disabled
+      setWeeklyReports(false);
+      await AsyncStorage.setItem(weeklyReportsKey, "false");
+    }
+  };
+
+  const handleWeeklyReportsToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestPermissions();
+      if (granted) {
+        setWeeklyReports(true);
+        await AsyncStorage.setItem(weeklyReportsKey, "true");
+      } else {
+        setWeeklyReports(false);
+        await AsyncStorage.setItem(weeklyReportsKey, "false");
+        Alert.alert(
+          "Permission Required",
+          "Notification permissions are required to enable weekly reports."
+        );
+      }
+    } else {
+      setWeeklyReports(false);
+      await AsyncStorage.setItem(weeklyReportsKey, "false");
+    }
+  };
+
   return (
     <>
       <Animated.Text
@@ -55,10 +123,6 @@ export default function Preferences() {
           <Switch
             value={isDark}
             onValueChange={toggleTheme}
-            trackColor={{
-              true: colors.border,
-            }}
-            thumbColor={isDark ? colors.primary : colors.textMuted}
           />
         </View>
 
@@ -86,11 +150,7 @@ export default function Preferences() {
 
           <Switch
             value={notifications}
-            onValueChange={setNotifications}
-            trackColor={{
-              true: colors.border,
-            }}
-            thumbColor={notifications ? colors.primary : colors.textMuted}
+            onValueChange={handleNotificationsToggle}
           />
         </View>
 
@@ -98,7 +158,7 @@ export default function Preferences() {
 
         <View style={styles.settingRow}>
           <View style={styles.settingLeft}>
-            <MaterialIcons name="bar-chart" size={22} color={colors.primary} />
+            <MaterialIcons name="leaderboard" size={22} color={colors.primary} />
 
             <Text
               style={[
@@ -114,11 +174,7 @@ export default function Preferences() {
 
           <Switch
             value={weeklyReports}
-            onValueChange={setWeeklyReports}
-            trackColor={{
-              true: colors.border,
-            }}
-            thumbColor={weeklyReports ? colors.primary : colors.textMuted}
+            onValueChange={handleWeeklyReportsToggle}
           />
         </View>
       </Animated.View>
@@ -161,7 +217,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 12,
-    marginTop: 24,
     textTransform: "uppercase",
   },
 });

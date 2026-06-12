@@ -39,6 +39,12 @@ export async function requestPermissions(): Promise<boolean> {
   return status === "granted";
 }
 
+export async function checkNotificationPermission(): Promise<boolean> {
+  if (!Device.isDevice) return false;
+  const { status } = await Notifications.getPermissionsAsync();
+  return status === "granted";
+}
+
 export async function scheduleHabitReminders(habit: Habit): Promise<string[]> {
   if (!habit.reminderEnabled || habit.reminderTimes.length === 0) return [];
 

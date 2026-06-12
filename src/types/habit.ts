@@ -1,10 +1,6 @@
-// types/habit.ts
-
 export type ISODate = string;
-// 2026-06-10
 
 export type ISODateTime = string;
-// 2026-06-10T08:30:00.000Z
 
 export type DayOfWeek = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
@@ -31,14 +27,6 @@ export type HabitLog = {
   completedAt: ISODateTime;
 };
 
-export type Reminder = {
-  id: string;
-  habitId: string;
-  enabled: boolean;
-  times: string[];
-  frequency: "daily" | "hourly" | "custom";
-};
-
 export type HabitStats = {
   habitId: string;
   currentStreak: number;
@@ -47,13 +35,7 @@ export type HabitStats = {
   completionRate: number;
 };
 
-export type HabitWithStats = Habit & {
-  stats: HabitStats;
-};
-export type CreateHabitInput = Omit<
-  Habit,
-  "createdAt" | "updatedAt"
->;
+export type CreateHabitInput = Omit<Habit, "createdAt" | "updatedAt">;
 
 export type HabitStore = {
   habits: Habit[];

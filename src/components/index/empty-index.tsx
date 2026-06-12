@@ -17,7 +17,7 @@ export default function EmptyIndex() {
         paddingHorizontal: 32,
       }}
     >
-      <MaterialIcons name="event-note" size={80} color={colors.primary} />
+      <MaterialIcons name="wb-iridescent" size={80} color={colors.primary} />
 
       <ThemedText
         style={{

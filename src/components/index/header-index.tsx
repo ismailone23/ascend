@@ -3,6 +3,7 @@ import ThemedView from "@/components/ThemedView";
 import { useColors } from "@/hooks/useColors";
 import { MaterialIcons } from "@expo/vector-icons";
 import dayjs, { Dayjs } from "dayjs";
+import { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 type Props = {
@@ -13,11 +14,12 @@ type Props = {
 export default function HeaderIndex({ selectedDate, onSelectDate }: Props) {
   const colors = useColors();
 
-  const startOfWeek = dayjs().startOf("week");
-
-  const weekDays = Array.from({ length: 7 }, (_, i) =>
-    startOfWeek.add(i, "day"),
-  );
+  const weekDays = useMemo(() => {
+    const startOfWeek = dayjs().startOf("week");
+    return Array.from({ length: 7 }, (_, i) =>
+      startOfWeek.add(i, "day"),
+    );
+  }, []);
 
   const title = selectedDate.isSame(dayjs(), "day")
     ? "Today"
@@ -117,17 +119,16 @@ const styles = StyleSheet.create({
   },
 
   dayPill: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     borderRadius: 26,
     borderWidth: 1,
-
     justifyContent: "center",
     alignItems: "center",
   },
 
   dayNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
   },
 });
