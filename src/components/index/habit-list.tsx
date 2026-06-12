@@ -1,7 +1,8 @@
+import IconView from "@/components/IconView";
+import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
 import { Habit } from "@/types/habit";
-import { Octicons } from "@expo/vector-icons";
 import { Dayjs } from "dayjs";
 import * as Haptics from "expo-haptics";
 import { useCallback } from "react";
@@ -12,22 +13,13 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import Svg, { Circle } from "react-native-svg";
-import ThemedText from "../ThemedText";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function getFrequencyLabel(habit: Habit): string {
-  switch (habit.frequency) {
-    case "daily":
-      return "Daily";
-    case "weekly":
-      return `${habit.timesPerWeek}x/wk`;
-    case "custom":
-      return habit.days.join(", ");
-    default:
-      return "";
-  }
+  if (!habit.days || habit.days.length === 0) return "";
+  if (habit.days.length === 7) return "Every Day";
+  return habit.days.join(", ");
 }
 
 export default function HabitList({
@@ -40,44 +32,30 @@ export default function HabitList({
   onLongPress?: () => void;
 }) {
   const colors = useColors();
-  const { dailyLogs, incrementProgress, stats } = useHabitStore();
-
+  const { dailyLogs, incrementProgress } = useHabitStore();
   const log = dailyLogs[habit.id] || { progress: 0, isCompleted: false };
   const { isCompleted, progress } = log;
 
-  const currentStreak = stats[habit.id]?.currentStreak || 0;
-
-  // Cap progress at dailyGoal for calculation
   const clampedProgress = Math.min(progress, habit.dailyGoal);
-  const percentage = Math.round((clampedProgress / habit.dailyGoal) * 100);
 
   const scale = useSharedValue(1);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.96, {
-      damping: 20,
-      stiffness: 400,
-    });
+    scale.value = withSpring(0.97, { damping: 20, stiffness: 400 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, {
-      damping: 20,
-      stiffness: 400,
-    });
+    scale.value = withSpring(1, { damping: 20, stiffness: 400 });
   };
 
-  const animatedCardStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      opacity: withTiming(isCompleted ? 0.9 : 1, { duration: 200 }),
-    };
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: withTiming(isCompleted ? 0.85 : 1, { duration: 200 }),
+  }));
 
   const handleToggle = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const dateStr = selectedDate.format("YYYY-MM-DD");
-    await incrementProgress(habit, dateStr);
+    await incrementProgress(habit, selectedDate.format("YYYY-MM-DD"));
   }, [habit, selectedDate, incrementProgress]);
 
   const handleLongPress = useCallback(() => {
@@ -94,7 +72,7 @@ export default function HabitList({
       onLongPress={handleLongPress}
       delayLongPress={400}
       style={[
-        animatedCardStyle,
+        animatedStyle,
         styles.card,
         {
           backgroundColor: colors.background,
@@ -102,95 +80,49 @@ export default function HabitList({
         },
       ]}
     >
-      {/* Top row: icon + text + checkbox ring */}
-      <View style={styles.topRow}>
-        {/* Icon */}
-        <View style={[styles.iconCircle, { backgroundColor: "transparent" }]}>
-          <Text style={styles.iconEmoji}>{habit.icon}</Text>
+      <View style={styles.row}>
+        {/* Left: icon circle */}
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.primary + "33" },
+          ]}
+        >
+          <IconView iconKey={habit.icon} size={26} circle={false} />
         </View>
 
-        {/* Title + comment */}
+        {/* Middle: title + frequency */}
         <View style={styles.textBlock}>
           <ThemedText style={styles.title}>{habit.title}</ThemedText>
-
-          {habit.comment ? (
-            <ThemedText style={styles.comment} variant="muted">
-              {habit.comment}
+          {frequencyLabel ? (
+            <ThemedText style={styles.frequency} variant="muted">
+              {frequencyLabel}
             </ThemedText>
           ) : null}
         </View>
 
-        <Pressable
-          onPress={handleToggle}
-          hitSlop={12}
-          style={[styles.ringContainer]}
-        >
-          {isCompleted ? (
-            <View
+        {/* Right: count pill */}
+        <Pressable onPress={handleToggle} hitSlop={12}>
+          <View
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isCompleted
+                  ? colors.primary + "33"
+                  : colors.surface,
+              },
+            ]}
+          >
+            <Text
               style={[
-                styles.ring,
-                {
-                  borderColor: colors.primary,
-                  backgroundColor: colors.primary,
-                },
+                styles.pillText,
+                { color: isCompleted ? "#fff" : colors.primary },
               ]}
             >
-              <Octicons name="check" size={24} color={colors.background} />
-            </View>
-          ) : (
-            <View style={styles.svgContainer}>
-              <Svg width="52" height="52" viewBox="0 0 52 52">
-                <Circle
-                  cx="26"
-                  cy="26"
-                  r="22"
-                  stroke={colors.primary}
-                  strokeWidth="4"
-                  fill="transparent"
-                  strokeOpacity={0.2}
-                />
-                {/* Progress Ring */}
-                <Circle
-                  cx="26"
-                  cy="26"
-                  r="22"
-                  stroke={colors.primary}
-                  strokeWidth="4"
-                  fill="transparent"
-                  strokeDasharray={`${22 * 2 * Math.PI}`}
-                  strokeDashoffset={`${22 * 2 * Math.PI * (1 - clampedProgress / habit.dailyGoal)}`}
-                  strokeLinecap="round"
-                  rotation="-90"
-                  origin="26, 26"
-                />
-              </Svg>
-              <View style={styles.ringTextContainer}>
-                <Text style={styles.ringText}>{percentage}%</Text>
-              </View>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
-      {/* Footer: streak goal + frequency */}
-      <View
-        style={[
-          styles.footer,
-          { borderTopWidth: 1, borderTopColor: colors.border },
-        ]}
-      >
-        <View style={styles.streakBadge}>
-          <Octicons name="flame" size={14} color={colors.primary} />
-          <Text style={styles.streakText}>{currentStreak} day streak</Text>
-        </View>
-
-        {frequencyLabel ? (
-          <View
-            style={[styles.frequencyBadge, { backgroundColor: colors.surface }]}
-          >
-            <Text style={styles.frequencyText}>{frequencyLabel}</Text>
+              {clampedProgress}/{habit.dailyGoal}
+            </Text>
           </View>
-        ) : null}
+        </Pressable>
       </View>
     </AnimatedPressable>
   );
@@ -198,115 +130,47 @@ export default function HabitList({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     marginHorizontal: 16,
     overflow: "hidden",
   },
-
-  topRow: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 14,
+    gap: 12,
   },
-
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
-
-  iconEmoji: {
-    fontSize: 30,
-  },
-
   textBlock: {
     flex: 1,
-    marginLeft: 14,
-    marginRight: 12,
+    gap: 3,
   },
-
   title: {
-    fontSize: 19,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
-
-  comment: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: "500",
+  frequency: {
+    fontSize: 13,
+    fontWeight: "400",
   },
-
-  ringContainer: {
-    width: 52,
-    height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  svgContainer: {
-    width: 52,
-    height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-
-  ringTextContainer: {
-    position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
-  },
-
-  ring: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 4,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  ringText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#38BDF8",
-  },
-
-  footer: {
+  pill: {
+    padding: 14,
+    borderRadius: 99,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    justifyContent: "center",
+    gap: 2,
   },
-
-  streakBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  streakText: {
+  pillText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#38BDF8",
-  },
-
-  frequencyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  frequencyText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#8B949E",
+    fontWeight: "700",
   },
 });

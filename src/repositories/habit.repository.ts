@@ -9,42 +9,46 @@ export const habitrepositry = {
         ORDER BY created_at DESC
       `);
 
-      return rows.map((row) => {
-        const base = {
-          id: row.id,
-          title: row.title,
-          comment: row.comment,
-          icon: row.icon,
-          dailyGoal: row.daily_goal,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
-        };
-
-        if (row.frequency === "weekly") {
-          const repeat = row.frequency_repeat ? JSON.parse(row.frequency_repeat) : { timesPerWeek: 1 };
-          return { ...base, frequency: "weekly", timesPerWeek: repeat.timesPerWeek } as Habit;
-        } else if (row.frequency === "custom") {
-          const repeat = row.frequency_repeat ? JSON.parse(row.frequency_repeat) : { days: [] };
-          return { ...base, frequency: "custom", days: repeat.days } as Habit;
-        }
-
-        return { ...base, frequency: "daily" } as Habit;
-      });
+      return rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        comment: row.comment,
+        icon: row.icon,
+        days: row.days ? JSON.parse(row.days) : [],
+        dailyGoal: row.daily_goal,
+        streakGoal: row.streak_goal ?? "Day",
+        reminderEnabled: row.reminder_enabled === 1,
+        reminderTimes: row.reminder_times ? JSON.parse(row.reminder_times) : [],
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
     } catch (error) {
       console.log({ error });
       return [];
     }
   },
+
+  async saveNotificationIds(habitId: string, ids: string[]): Promise<void> {
+    await db.runAsync(`UPDATE habits SET notification_ids = ? WHERE id = ?`, [
+      JSON.stringify(ids),
+      habitId,
+    ]);
+  },
+
+  async getNotificationIds(habitId: string): Promise<string[]> {
+    const row = await db.getFirstAsync<{ notification_ids: string }>(
+      `SELECT notification_ids FROM habits WHERE id = ?`,
+      [habitId],
+    );
+    if (!row?.notification_ids) return [];
+    try {
+      return JSON.parse(row.notification_ids);
+    } catch {
+      return [];
+    }
+  },
   async create(habit: CreateHabitInput) {
     const now = new Date().toISOString();
-
-    // Build frequency_repeat from the union type
-    let frequencyRepeat: string | null = null;
-    if (habit.frequency === "weekly") {
-      frequencyRepeat = JSON.stringify({ timesPerWeek: habit.timesPerWeek });
-    } else if (habit.frequency === "custom") {
-      frequencyRepeat = JSON.stringify({ days: habit.days });
-    }
 
     try {
       await db.runAsync(
@@ -54,22 +58,26 @@ export const habitrepositry = {
         title,
         comment,
         icon,
-        frequency,
-        frequency_repeat,
+        days,
         daily_goal,
+        streak_goal,
+        reminder_enabled,
+        reminder_times,
         created_at,
         updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           habit.id,
           habit.title,
           habit.comment ?? null,
           habit.icon,
-          habit.frequency,
-          frequencyRepeat,
+          JSON.stringify(habit.days),
           habit.dailyGoal,
+          habit.streakGoal,
+          habit.reminderEnabled ? 1 : 0,
+          JSON.stringify(habit.reminderTimes),
           now,
           now,
         ],

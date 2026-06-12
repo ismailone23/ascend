@@ -43,8 +43,8 @@ export default function Stats() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      <View style={styles.header}>
-        <ThemedText style={styles.title}>Your Progress</ThemedText>
+      <View style={styles.header} accessibilityRole="header">
+        <ThemedText accessibilityRole="header" style={styles.title}>Your Progress</ThemedText>
         <ThemedText variant="muted" style={styles.subtitle}>
           Consistency is key to mastery.
         </ThemedText>
@@ -53,37 +53,57 @@ export default function Stats() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* At a glance */}
-        <View style={styles.overviewGrid}>
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]}>
+        <View style={styles.overviewGrid} accessibilityRole="list" accessibilityLabel="Overview statistics">
+          <View
+            accessible
+            accessibilityRole="summary"
+            accessibilityLabel={`Active Habits: ${habits.length}`}
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]} accessibilityElementsHidden>
               <Octicons name="tasklist" size={18} color={colors.primary} />
             </View>
-            <ThemedText style={styles.cardValue}>{habits.length}</ThemedText>
-            <ThemedText variant="muted" style={styles.cardLabel}>Active Habits</ThemedText>
+            <ThemedText style={styles.cardValue} aria-hidden>{habits.length}</ThemedText>
+            <ThemedText variant="muted" style={styles.cardLabel} aria-hidden>Active Habits</ThemedText>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]}>
+          <View
+            accessible
+            accessibilityRole="summary"
+            accessibilityLabel={`Total Completions: ${totalCompletions}`}
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]} accessibilityElementsHidden>
               <Octicons name="check-circle" size={18} color={colors.primary} />
             </View>
-            <ThemedText style={styles.cardValue}>{totalCompletions}</ThemedText>
-            <ThemedText variant="muted" style={styles.cardLabel}>Total Completions</ThemedText>
+            <ThemedText style={styles.cardValue} aria-hidden>{totalCompletions}</ThemedText>
+            <ThemedText variant="muted" style={styles.cardLabel} aria-hidden>Total Completions</ThemedText>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]}>
+          <View
+            accessible
+            accessibilityRole="summary"
+            accessibilityLabel={`Best Active Streak: ${bestActiveStreak} days`}
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]} accessibilityElementsHidden>
               <Octicons name="flame" size={18} color={colors.primary} />
             </View>
-            <ThemedText style={styles.cardValue}>{bestActiveStreak}</ThemedText>
-            <ThemedText variant="muted" style={styles.cardLabel}>Best Active Streak</ThemedText>
+            <ThemedText style={styles.cardValue} aria-hidden>{bestActiveStreak}</ThemedText>
+            <ThemedText variant="muted" style={styles.cardLabel} aria-hidden>Best Active Streak</ThemedText>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]}>
+          <View
+            accessible
+            accessibilityRole="summary"
+            accessibilityLabel={`Perfect Days: ${perfectDays}`}
+            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <View style={[styles.iconWrapper, { backgroundColor: `${colors.primary}15` }]} accessibilityElementsHidden>
               <Octicons name="star" size={18} color={colors.primary} />
             </View>
-            <ThemedText style={styles.cardValue}>{perfectDays}</ThemedText>
-            <ThemedText variant="muted" style={styles.cardLabel}>Perfect Days</ThemedText>
+            <ThemedText style={styles.cardValue} aria-hidden>{perfectDays}</ThemedText>
+            <ThemedText variant="muted" style={styles.cardLabel} aria-hidden>Perfect Days</ThemedText>
           </View>
         </View>
 
@@ -93,19 +113,26 @@ export default function Stats() {
         {/* Top Habits */}
         {topHabits.length > 0 && (
           <View style={styles.topHabitsContainer}>
-            <ThemedText style={styles.sectionTitle}>Top Habits</ThemedText>
-            <View style={[styles.topHabitsList, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>Top Habits</ThemedText>
+            <View
+              accessibilityRole="list"
+              accessibilityLabel="Top habits ranked by streak"
+              style={[styles.topHabitsList, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
               {topHabits.map((habit, index) => {
                 const habitStats = stats[habit.id] || { currentStreak: 0, completionRate: 0 };
                 return (
                   <View
                     key={habit.id}
+                    accessible
+
+                    accessibilityLabel={`${habit.title}, ${habitStats.completionRate}% completion rate, ${habitStats.currentStreak} day streak`}
                     style={[
                       styles.topHabitItem,
                       index < topHabits.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
                     ]}
                   >
-                    <View style={styles.habitIconWrapper}>
+                    <View style={styles.habitIconWrapper} accessibilityElementsHidden>
                       <ThemedText style={styles.habitIcon}>{habit.icon}</ThemedText>
                     </View>
                     <View style={styles.habitInfo}>
@@ -114,7 +141,7 @@ export default function Stats() {
                         {habitStats.completionRate}% completion rate
                       </ThemedText>
                     </View>
-                    <View style={[styles.streakPill, { backgroundColor: `${colors.primary}12` }]}>
+                    <View style={[styles.streakPill, { backgroundColor: `${colors.primary}12` }]} accessibilityElementsHidden>
                       <Octicons name="flame" size={12} color={colors.primary} />
                       <ThemedText style={[styles.streakText, { color: colors.primary }]}>
                         {habitStats.currentStreak}

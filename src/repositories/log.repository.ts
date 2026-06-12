@@ -26,7 +26,11 @@ export const logRepository = {
     date: string,
   ): Promise<{ habit_id: string; progress: number; completed: number }[]> {
     try {
-      return await db.getAllAsync<{ habit_id: string; progress: number; completed: number }>(
+      return await db.getAllAsync<{
+        habit_id: string;
+        progress: number;
+        completed: number;
+      }>(
         `SELECT habit_id, progress, completed FROM habit_logs WHERE date = ?`,
         [date],
       );
@@ -36,10 +40,7 @@ export const logRepository = {
     }
   },
 
-  async getHabitLogs(
-    habitId: string,
-    days: number = 365,
-  ): Promise<string[]> {
+  async getHabitLogs(habitId: string, days: number = 365): Promise<string[]> {
     try {
       const threshold = new Date();
       threshold.setDate(threshold.getDate() - days);
@@ -56,6 +57,33 @@ export const logRepository = {
     } catch (error) {
       console.log({ error });
       return [];
+    }
+  },
+
+  async getHabitProgress(
+    habitId: string,
+    days: number = 365,
+  ): Promise<Record<string, number>> {
+    try {
+      const threshold = new Date();
+      threshold.setDate(threshold.getDate() - days);
+      const thresholdStr = toLocalDate(threshold);
+
+      const rows = await db.getAllAsync<{ date: string; progress: number }>(
+        `SELECT date, progress FROM habit_logs
+         WHERE habit_id = ? AND date >= ?
+         ORDER BY date ASC`,
+        [habitId, thresholdStr],
+      );
+
+      const result: Record<string, number> = {};
+      for (const row of rows) {
+        result[row.date] = row.progress;
+      }
+      return result;
+    } catch (error) {
+      console.log({ error });
+      return {};
     }
   },
 
@@ -97,7 +125,12 @@ export const logRepository = {
 
       const totalCompletions = rows.length;
       if (totalCompletions === 0) {
-        return { currentStreak: 0, bestStreak: 0, totalCompletions: 0, completionRate: 0 };
+        return {
+          currentStreak: 0,
+          bestStreak: 0,
+          totalCompletions: 0,
+          completionRate: 0,
+        };
       }
 
       const dates = new Set(rows.map((r) => r.date));
@@ -140,20 +173,29 @@ export const logRepository = {
       // Completion rate: completions / days since first completion
       const firstDate = new Date(sortedDates[0] + "T12:00:00");
       const daysSinceFirst =
-        Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const completionRate = Math.round((totalCompletions / Math.max(daysSinceFirst, 1)) * 100);
+        Math.floor(
+          (today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
+        ) + 1;
+      const completionRate = Math.round(
+        (totalCompletions / Math.max(daysSinceFirst, 1)) * 100,
+      );
 
       return { currentStreak, bestStreak, totalCompletions, completionRate };
     } catch (error) {
       console.log({ error });
-      return { currentStreak: 0, bestStreak: 0, totalCompletions: 0, completionRate: 0 };
+      return {
+        currentStreak: 0,
+        bestStreak: 0,
+        totalCompletions: 0,
+        completionRate: 0,
+      };
     }
   },
 
   async getAllHabitsStats(): Promise<Record<string, HabitStats>> {
     try {
       const rows = await db.getAllAsync<{ habit_id: string; date: string }>(
-        `SELECT habit_id, date FROM habit_logs WHERE completed = 1 ORDER BY date DESC`
+        `SELECT habit_id, date FROM habit_logs WHERE completed = 1 ORDER BY date DESC`,
       );
 
       const logsByHabit: Record<string, string[]> = {};
@@ -201,10 +243,21 @@ export const logRepository = {
         }
 
         const firstDate = new Date(sortedDates[0] + "T12:00:00");
-        const daysSinceFirst = Math.floor((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const completionRate = Math.round((totalCompletions / Math.max(daysSinceFirst, 1)) * 100);
+        const daysSinceFirst =
+          Math.floor(
+            (today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
+          ) + 1;
+        const completionRate = Math.round(
+          (totalCompletions / Math.max(daysSinceFirst, 1)) * 100,
+        );
 
-        stats[habitId] = { habitId, currentStreak, bestStreak, totalCompletions, completionRate };
+        stats[habitId] = {
+          habitId,
+          currentStreak,
+          bestStreak,
+          totalCompletions,
+          completionRate,
+        };
       }
 
       return stats;
@@ -214,7 +267,12 @@ export const logRepository = {
     }
   },
 
-  async saveProgress(habitId: string, date: string, progress: number, completed: boolean) {
+  async saveProgress(
+    habitId: string,
+    date: string,
+    progress: number,
+    completed: boolean,
+  ) {
     try {
       await db.runAsync(
         `
@@ -228,7 +286,14 @@ export const logRepository = {
       )
       VALUES (?, ?, ?, ?, ?, ?)
       `,
-        [`${habitId}-${date}`, habitId, date, completed ? 1 : 0, progress, new Date().toISOString()],
+        [
+          `${habitId}-${date}`,
+          habitId,
+          date,
+          completed ? 1 : 0,
+          progress,
+          new Date().toISOString(),
+        ],
       );
     } catch (error) {
       console.log({ error });
@@ -250,4 +315,3 @@ export const logRepository = {
     }
   },
 };
-

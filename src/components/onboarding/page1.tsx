@@ -1,8 +1,8 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
-
+import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
+import { MaterialIcons } from "@expo/vector-icons";
+import { StyleSheet, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 
 export default function Page1() {
   const colors = useColors();
@@ -27,6 +27,9 @@ export default function Page1() {
       />
 
       <View
+        accessible
+        accessibilityRole="summary"
+        accessibilityLabel="24 day streak progress card"
         style={[
           styles.statsCard,
           {
@@ -36,8 +39,8 @@ export default function Page1() {
         ]}
       >
         <View style={styles.topRow}>
-          <View>
-            <Text
+          <View accessible accessibilityLabel="24 day streak">
+            <ThemedText
               style={[
                 styles.bigNumber,
                 {
@@ -46,25 +49,29 @@ export default function Page1() {
               ]}
             >
               24
-            </Text>
+            </ThemedText>
 
-            <Text
-              style={{
-                color: colors.textMuted,
-              }}
+            <ThemedText
+              variant="muted"
             >
               Day Streak
-            </Text>
+            </ThemedText>
           </View>
 
           <MaterialIcons
             name="local-fire-department"
             size={42}
             color={colors.primary}
+            accessibilityElementsHidden
           />
         </View>
 
-        <View style={styles.chart}>
+        <View
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel="Weekly progress bar chart showing increasing activity"
+          style={styles.chart}
+        >
           {[45, 70, 55, 90, 100, 85, 100].map((height, index) => (
             <View
               key={index}
@@ -81,28 +88,20 @@ export default function Page1() {
       </View>
 
       <View style={styles.content}>
-        <Text
-          style={[
-            styles.title,
-            {
-              color: colors.text,
-            },
-          ]}
+        <ThemedText
+          accessibilityRole="header"
+          style={styles.title}
         >
           Track Your Progress
-        </Text>
+        </ThemedText>
 
-        <Text
-          style={[
-            styles.description,
-            {
-              color: colors.textMuted,
-            },
-          ]}
+        <ThemedText
+          variant="muted"
+          style={styles.description}
         >
           Watch your streaks grow and stay motivated with visual progress
           tracking.
-        </Text>
+        </ThemedText>
       </View>
     </Animated.View>
   );

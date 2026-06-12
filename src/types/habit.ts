@@ -8,28 +8,19 @@ export type ISODateTime = string;
 
 export type DayOfWeek = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
-export type HabitFrequency =
-  | {
-      frequency: "daily";
-    }
-  | {
-      frequency: "weekly";
-      timesPerWeek: number;
-    }
-  | {
-      frequency: "custom";
-      days: DayOfWeek[];
-    };
-
 export type Habit = {
   id: string;
   title: string;
   comment?: string;
   icon: string;
+  days: DayOfWeek[];
   dailyGoal: number;
+  streakGoal: "Day" | "Week" | "Month";
+  reminderEnabled: boolean;
+  reminderTimes: string[]; // e.g. ["08:30 AM", "09:00 PM"]
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
-} & HabitFrequency;
+};
 
 export type HabitLog = {
   id: string;
@@ -61,9 +52,8 @@ export type HabitWithStats = Habit & {
 };
 export type CreateHabitInput = Omit<
   Habit,
-  "createdAt" | "updatedAt" | "frequency"
-> &
-  HabitFrequency;
+  "createdAt" | "updatedAt"
+>;
 
 export type HabitStore = {
   habits: Habit[];
