@@ -1,3 +1,3 @@
-![Twitter Image](https://pbs.twimg.com/media/HKo2ydGboAAbBVr?format=jpg&name=small)
+<img src="assets/screenshots/home.png" alt="Home screen with today's habits" width="300" />
 
-![Twitter Image](https://pbs.twimg.com/media/HKo2yiTaUAAmh8b?format=jpg&name=small)
+<img src="assets/screenshots/form.png" alt="New habit form" width="300" />
