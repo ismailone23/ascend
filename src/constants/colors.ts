@@ -1,19 +1,19 @@
 export const Colors = {
   light: {
-    background: "#FAF8F7",
+    background: "#F5F5F5",
     surface: "#FFFFFF",
     card: "#FFFFFF",
 
-    text: "#2F2A2A",
-    textMuted: "#7A7272",
+    text: "#1F1F1F",
+    textMuted: "#737373",
 
     primary: "#C56B6B",
     primaryLight: "#D98A8A",
     primaryDark: "#A85757",
 
-    border: "#E8DEDE",
+    border: "#E5E5E5",
 
-    indicator: "#D7CCCC",
+    indicator: "#D4D4D4",
     indicatorActive: "#C56B6B",
 
     success: "#6B9E7A",
@@ -22,20 +22,20 @@ export const Colors = {
   },
 
   dark: {
-    background: "#161313",
-    surface: "#211D1D",
-    card: "#2A2525",
+    background: "#121212",
+    surface: "#1C1C1C",
+    card: "#262626",
 
-    text: "#F4F1F1",
-    textMuted: "#A89E9E",
+    text: "#F5F5F5",
+    textMuted: "#A3A3A3",
 
     primary: "#D98A8A",
     primaryLight: "#E7A8A8",
     primaryDark: "#C56B6B",
 
-    border: "#3A3333",
+    border: "#333333",
 
-    indicator: "#514848",
+    indicator: "#4D4D4D",
     indicatorActive: "#D98A8A",
 
     success: "#7FB08E",
