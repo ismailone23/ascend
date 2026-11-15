@@ -212,7 +212,7 @@ export default function IconPickerModal({
                   <ThemedText
                     style={{
                       fontWeight: isActive ? "700" : "500",
-                      color: isActive ? "#1C1C1E" : colors.text,
+                      color: isActive ? colors.onPrimary : colors.text,
                     }}
                   >
                     {cat.label}
