@@ -58,10 +58,24 @@ export async function initializeDatabase() {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS goals (
       id         TEXT PRIMARY KEY NOT NULL,
-      title      TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      title       TEXT NOT NULL,
+      icon        TEXT NOT NULL DEFAULT 'mi::flag',
+      target_date TEXT,                              -- ISODate, optional deadline
+      created_at  TEXT NOT NULL
     );
   `);
+  // Installs made before these columns existed already have the table.
+  const goalColumns = (
+    await db.getAllAsync<{ name: string }>(`PRAGMA table_info(goals)`)
+  ).map((column) => column.name);
+  if (!goalColumns.includes("target_date")) {
+    await db.execAsync(`ALTER TABLE goals ADD COLUMN target_date TEXT;`);
+  }
+  if (!goalColumns.includes("icon")) {
+    await db.execAsync(
+      `ALTER TABLE goals ADD COLUMN icon TEXT NOT NULL DEFAULT 'mi::flag';`,
+    );
+  }
 
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS goal_steps (
