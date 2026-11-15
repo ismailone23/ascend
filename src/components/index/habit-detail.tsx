@@ -12,8 +12,23 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+
+// No overshoot when the sheet arrives or settles back.
+const SPRING = { dampingRatio: 1, duration: 350 };
 import CompletionHeatmap from "./habit-detail/CompletionHeatmap";
 import DetailHeader from "./habit-detail/DetailHeader";
 import InfoPills from "./habit-detail/InfoPills";
@@ -37,6 +52,38 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
   });
   const [progressData, setProgressData] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+
+  // The sheet slides up from the bottom and can be dragged back down by its
+  // handle. The dimmed backdrop fades separately and stays put.
+  const { height } = useWindowDimensions();
+  const sheetY = useSharedValue(height);
+  useEffect(() => {
+    if (visible) {
+      sheetY.value = height;
+      sheetY.value = withSpring(0, SPRING);
+    }
+  }, [visible]);
+
+  const dismiss = () => {
+    sheetY.value = withSpring(height, SPRING, (finished) => {
+      if (finished) runOnJS(onClose)();
+    });
+  };
+
+  const drag = Gesture.Pan()
+    .onUpdate((e) => {
+      // Follows the finger down; resists being pulled up past its resting place.
+      sheetY.value =
+        e.translationY > 0 ? e.translationY : e.translationY * 0.15;
+    })
+    .onEnd((e) => {
+      // Judge by where the drag is heading, so a quick flick down closes it.
+      if (e.translationY + e.velocityY * 0.1 > 140) runOnJS(dismiss)();
+      else sheetY.value = withSpring(0, SPRING);
+    });
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sheetY.value }],
+  }));
 
   useEffect(() => {
     let active = true;
@@ -90,126 +137,145 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
   if (!habit) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <Pressable style={styles.backdrop} onPress={onClose} />
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={dismiss}
+    >
+      {/* Gestures inside a Modal need their own root on Android */}
+      <GestureHandlerRootView style={styles.root}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={dismiss}
+          accessibilityLabel="Close"
+        />
 
-      <View
-        style={[
-          styles.sheet,
-          {
-            backgroundColor: colors.background,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        {/* Handle bar */}
-        <View style={styles.handleBar}>
-          <View style={[styles.handle, { backgroundColor: colors.border }]} />
-        </View>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+        <Animated.View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.background },
+            sheetStyle,
+          ]}
         >
-          {/* Header */}
-          <DetailHeader habit={habit} onClose={onClose} />
-
-          {/* Info pills */}
-          <InfoPills habit={habit} stats={stats} />
-
-          {/* Stats grid */}
-          <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-            Statistics
-          </ThemedText>
-
-          {loading ? (
-            <ThemedText
-              variant="muted"
-              style={{ textAlign: "center", paddingVertical: 20 }}
-            >
-              Loading stats…
-            </ThemedText>
-          ) : (
-            <View style={styles.statsGrid}>
-              <StatCard
-                icon="flame"
-                label="Current Streak"
-                value={`${stats.currentStreak}d`}
-                color="#F97316"
-              />
-              <StatCard
-                icon="trophy"
-                label="Best Streak"
-                value={`${stats.bestStreak}d`}
-                color="#EAB308"
-              />
-              <StatCard
-                icon="check-circle"
-                label="Completions"
-                value={stats.totalCompletions}
-                color="#22C55E"
-              />
-              <StatCard
-                icon="graph"
-                label="Success Rate"
-                value={`${stats.completionRate}%`}
-                color={colors.primary}
+          {/* Handle: drag down to close */}
+          <GestureDetector gesture={drag}>
+            <View style={styles.handleBar}>
+              <View
+                style={[styles.handle, { backgroundColor: colors.indicator }]}
               />
             </View>
-          )}
+          </GestureDetector>
 
-          {/* Heatmap */}
-          <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-            Last Year
-          </ThemedText>
-
-          <CompletionHeatmap data={progressData} loading={loading} />
-
-          {/* Actions */}
-          <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-            Actions
-          </ThemedText>
-
-          <Pressable
-            onPress={handleDelete}
-            accessibilityRole="button"
-            accessibilityLabel={`Delete habit: ${habit.title}`}
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: "rgba(239,68,68,0.1)",
-                borderColor: "rgba(239,68,68,0.2)",
-              },
-            ]}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
           >
-            <Octicons name="trash" size={18} color="#EF4444" />
-            <ThemedText style={[styles.actionText, { color: "#EF4444" }]}>
-              Delete Habit
+            {/* Header */}
+            <DetailHeader habit={habit} onClose={dismiss} />
+
+            {/* Info pills */}
+            <InfoPills habit={habit} stats={stats} />
+
+            {/* Stats grid */}
+            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
+              Statistics
             </ThemedText>
-          </Pressable>
-        </ScrollView>
-      </View>
+
+            {loading ? (
+              <ThemedText
+                variant="muted"
+                style={{ textAlign: "center", paddingVertical: 20 }}
+              >
+                Loading stats…
+              </ThemedText>
+            ) : (
+              <View style={styles.statsGrid}>
+                <StatCard
+                  icon="flame"
+                  label="Current Streak"
+                  value={`${stats.currentStreak}d`}
+                  color={colors.primary}
+                />
+                <StatCard
+                  icon="trophy"
+                  label="Best Streak"
+                  value={`${stats.bestStreak}d`}
+                  color={colors.primary}
+                />
+                <StatCard
+                  icon="check-circle"
+                  label="Completions"
+                  value={stats.totalCompletions}
+                  color={colors.primary}
+                />
+                <StatCard
+                  icon="graph"
+                  label="Success Rate"
+                  value={`${stats.completionRate}%`}
+                  color={colors.primary}
+                />
+              </View>
+            )}
+
+            {/* Heatmap */}
+            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
+              Last Year
+            </ThemedText>
+
+            <CompletionHeatmap data={progressData} loading={loading} />
+
+            {/* Actions */}
+            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
+              Actions
+            </ThemedText>
+
+            <Pressable
+              onPress={handleDelete}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete habit: ${habit.title}`}
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: "rgba(239,68,68,0.1)",
+                  borderColor: "rgba(239,68,68,0.2)",
+                },
+              ]}
+            >
+              <Octicons name="trash" size={18} color="#EF4444" />
+              <ThemedText style={[styles.actionText, { color: "#EF4444" }]}>
+                Delete Habit
+              </ThemedText>
+            </Pressable>
+          </ScrollView>
+        </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  root: {
     flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0,0,0,0.55)",
   },
 
   sheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    borderTopWidth: 1,
     maxHeight: "88%",
   },
 
+  // Tall enough to grab comfortably.
   handleBar: {
     alignItems: "center",
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
 
   handle: {
