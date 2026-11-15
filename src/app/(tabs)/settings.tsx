@@ -1,5 +1,6 @@
-import GeneralSettings from "@/components/settings/general-settings";
+import DataSettings from "@/components/settings/data-settings";
 import Preferences from "@/components/settings/preferences";
+import WidgetSettings from "@/components/settings/widget-settings";
 import { useColors } from "@/hooks/useColors";
 
 import { ScrollView, StyleSheet } from "react-native";
@@ -38,7 +39,8 @@ export default function SettingsScreen() {
 
         {/* Preferences */}
         <Preferences />
-        <GeneralSettings />
+        <WidgetSettings />
+        <DataSettings />
       </ScrollView>
     </SafeAreaView>
 
@@ -49,6 +51,6 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 34,
     fontWeight: "700",
-    marginBottom: 24,
+    letterSpacing: -0.4,
   },
 });

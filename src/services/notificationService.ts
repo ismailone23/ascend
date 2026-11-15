@@ -1,3 +1,5 @@
+import { notificationsKey } from "@/constants/storagekeys";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import type { DayOfWeek, Habit } from "../types/habit";
@@ -47,6 +49,8 @@ export async function checkNotificationPermission(): Promise<boolean> {
 
 export async function scheduleHabitReminders(habit: Habit): Promise<string[]> {
   if (!habit.reminderEnabled || habit.reminderTimes.length === 0) return [];
+  // The Notifications switch in Settings turns every reminder off.
+  if ((await AsyncStorage.getItem(notificationsKey)) === "false") return [];
 
   const ids: string[] = [];
 
@@ -84,4 +88,9 @@ export async function cancelHabitReminders(
       Notifications.cancelScheduledNotificationAsync(id),
     ),
   );
+}
+
+/** Removes every reminder this app has scheduled. */
+export async function cancelAllReminders(): Promise<void> {
+  await Notifications.cancelAllScheduledNotificationsAsync();
 }
