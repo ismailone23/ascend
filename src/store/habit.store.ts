@@ -2,6 +2,7 @@ import { habitRepository } from "@/repositories/habit.repository";
 import { logRepository } from "@/repositories/log.repository";
 import {
   cancelHabitReminders,
+  checkNotificationPermission,
   requestPermissions,
   scheduleHabitReminders,
 } from "@/services/notificationService";
@@ -16,6 +17,7 @@ type HabitStoreState = HabitStore & {
   loadLogs: (date: string) => Promise<void>;
   loadAllStats: () => Promise<void>;
   updateHabitReminder: (habit: Habit) => Promise<void>;
+  refreshReminders: (only?: Habit) => Promise<void>;
 };
 
 export const useHabitStore = create<HabitStoreState>((set, get) => ({
@@ -100,13 +102,38 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
     if (habit.reminderEnabled && habit.reminderTimes.length > 0) {
       const granted = await requestPermissions();
       if (granted) {
-        const notificationIds = await scheduleHabitReminders(habit);
+        const notificationIds = await scheduleHabitReminders(
+          habit,
+          get().stats[habit.id]?.currentStreak ?? 0,
+        );
         await habitRepository.saveNotificationIds(habit.id, notificationIds);
       }
     }
 
     const habits = await habitRepository.getAll();
     set({ habits });
+  },
+
+  // Rewrites reminders with fresh wording and the current streak. Unlike
+  // updateHabitReminder it never asks for permission, so it is safe at launch.
+  async refreshReminders(only?: Habit) {
+    try {
+      if (!(await checkNotificationPermission())) return;
+      for (const habit of only ? [only] : get().habits) {
+        if (!habit.reminderEnabled || habit.reminderTimes.length === 0)
+          continue;
+        await cancelHabitReminders(
+          await habitRepository.getNotificationIds(habit.id),
+        );
+        const ids = await scheduleHabitReminders(
+          habit,
+          get().stats[habit.id]?.currentStreak ?? 0,
+        );
+        await habitRepository.saveNotificationIds(habit.id, ids);
+      }
+    } catch (error) {
+      if (__DEV__) console.warn("[HabitStore]", error);
+    }
   },
 
   async incrementProgress(habit: Habit, date: string) {
@@ -139,6 +166,11 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
       await get().loadLogs(date); // the write failed: show what is really stored
     }
     await get().loadAllStats();
+    // Finishing (or un-finishing) a habit changes its streak, so its
+    // reminders are rewritten to match.
+    if (next.isCompleted !== current.isCompleted) {
+      await get().refreshReminders(habit);
+    }
   },
 }));
 

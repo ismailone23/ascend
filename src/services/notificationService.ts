@@ -47,7 +47,63 @@ export async function checkNotificationPermission(): Promise<boolean> {
   return status === "granted";
 }
 
-export async function scheduleHabitReminders(habit: Habit): Promise<string[]> {
+const pick = (items: string[]) =>
+  items[Math.floor(Math.random() * items.length)];
+
+/**
+ * Writes one reminder. The wording depends on the streak, how many times a day
+ * the habit is done and the time of day, and one fitting line is picked at
+ * random, so the same habit does not say the same thing every day.
+ */
+export function reminderMessage(habit: Habit, hour: number, streak: number) {
+  const lines: string[] = [];
+
+  if (streak >= 2) {
+    lines.push(
+      `${streak} days in a row. Today makes ${streak + 1}.`,
+      `Your ${streak}-day streak is still alive. Keep it that way.`,
+      `${streak} days so far. One more.`,
+    );
+  } else {
+    lines.push(
+      "A fresh start. Today can be day one.",
+      "Small and done beats big and skipped.",
+    );
+  }
+
+  if (habit.dailyGoal > 1) {
+    lines.push(
+      `${habit.dailyGoal} times today. Start with the first.`,
+      `No need for all ${habit.dailyGoal} at once. Just one for now.`,
+    );
+  }
+
+  if (hour < 12) {
+    lines.push(
+      "Do it early and the rest of the day is yours.",
+      "A good morning to get this done.",
+    );
+  } else if (hour < 18) {
+    lines.push(
+      "A quick one before the afternoon gets away.",
+      "Halfway through the day. Still time.",
+    );
+  } else {
+    lines.push(
+      "Before the day ends, a few minutes for this.",
+      "Close the day with this one done.",
+    );
+  }
+
+  if (habit.comment) lines.push(habit.comment); // the user's own note, sometimes
+
+  return pick(lines);
+}
+
+export async function scheduleHabitReminders(
+  habit: Habit,
+  streak = 0,
+): Promise<string[]> {
   if (!habit.reminderEnabled || habit.reminderTimes.length === 0) return [];
   // The Notifications switch in Settings turns every reminder off.
   if ((await AsyncStorage.getItem(notificationsKey)) === "false") return [];
@@ -60,8 +116,8 @@ export async function scheduleHabitReminders(habit: Habit): Promise<string[]> {
 
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: `${habit.icon} ${habit.title}`,
-          body: habit.comment ?? "Time to work on your habit!",
+          title: habit.title,
+          body: reminderMessage(habit, hour, streak),
           data: { habitId: habit.id },
           sound: true,
         },

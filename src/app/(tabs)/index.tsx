@@ -21,10 +21,11 @@ export default function Index() {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
   const colors = useColors();
-  const { loadHabits, loadLogs, habits } = useHabitStore();
+  const { loadHabits, loadLogs, habits, refreshReminders } = useHabitStore();
 
   useEffect(() => {
-    loadHabits();
+    // Each launch rewrites the reminders, so their wording keeps changing.
+    loadHabits().then(() => refreshReminders());
   }, []);
 
   // The swipe hint shows until the first swipe, then never again.
