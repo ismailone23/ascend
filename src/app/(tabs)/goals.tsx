@@ -1,5 +1,6 @@
 import FloatingButton from "@/components/FloatingButton";
 import GoalCard from "@/components/goals/GoalCard";
+import SortableRows from "@/components/goals/SortableRows";
 import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
 import { useKeyboardInset } from "@/hooks/useKeyboardInset";
@@ -128,7 +129,18 @@ export default function Goals() {
             </View>
           ) : (
             <>
-              {active.map(card)}
+              {/* Press and hold a closed goal to drag it to a new place. */}
+              <SortableRows
+                ids={active.map((goal) => goal.id)}
+                gap={12}
+                grab="hold"
+                canDrag={(id) => id !== openId}
+                onReorder={(ids) => {
+                  if (ids.join() !== active.map((goal) => goal.id).join())
+                    run(goalRepository.reorderGoals(ids));
+                }}
+                renderRow={(_id, index) => card(active[index])}
+              />
               {finished.length > 0 && (
                 <ThemedText variant="muted" style={styles.section}>
                   Completed

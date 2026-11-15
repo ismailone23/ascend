@@ -397,7 +397,8 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
           )}
           <SortableRows
             ids={goal.steps.map((step) => step.id)}
-            rowHeight={52}
+            gap={8}
+            grab="handle"
             onReorder={reorder}
             handleLabel={(index) => `Reorder step ${index + 1}`}
             renderRow={(id, index) => (

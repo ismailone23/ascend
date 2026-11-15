@@ -3,6 +3,28 @@ import { Goal } from "@/types/goal";
 
 const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
+async function reorder(
+  table: "goals" | "goal_steps",
+  ids: string[],
+  direction: "ASC" | "DESC",
+) {
+  await db.withTransactionAsync(async () => {
+    const rows = await db.getAllAsync<{ created_at: string }>(
+      `SELECT created_at FROM ${table}
+       WHERE id IN (${ids.map(() => "?").join(",")})
+       ORDER BY created_at ${direction}`,
+      ids,
+    );
+    if (rows.length !== ids.length) return;
+    for (let i = 0; i < ids.length; i++) {
+      await db.runAsync(`UPDATE ${table} SET created_at = ? WHERE id = ?`, [
+        rows[i].created_at,
+        ids[i],
+      ]);
+    }
+  });
+}
+
 export const goalRepository = {
   async getAll(): Promise<Goal[]> {
     const goals = await db.getAllAsync<{
@@ -82,26 +104,11 @@ export const goalRepository = {
     ]);
   },
 
+  /** Puts the goals in the given order, the first one on top. */
+  reorderGoals: (ids: string[]) => reorder("goals", ids, "DESC"),
+
   /** Puts a goal's steps in the given order. */
-  async reorderSteps(ids: string[]) {
-    await db.withTransactionAsync(async () => {
-      // Steps are ordered by created_at, so the same timestamps are dealt out
-      // again in the new order.
-      const rows = await db.getAllAsync<{ created_at: string }>(
-        `SELECT created_at FROM goal_steps
-         WHERE id IN (${ids.map(() => "?").join(",")})
-         ORDER BY created_at ASC`,
-        ids,
-      );
-      if (rows.length !== ids.length) return;
-      for (let i = 0; i < ids.length; i++) {
-        await db.runAsync(`UPDATE goal_steps SET created_at = ? WHERE id = ?`, [
-          rows[i].created_at,
-          ids[i],
-        ]);
-      }
-    });
-  },
+  reorderSteps: (ids: string[]) => reorder("goal_steps", ids, "ASC"),
 
   async deleteStep(stepId: string) {
     await db.runAsync(`DELETE FROM goal_steps WHERE id = ?`, [stepId]);
