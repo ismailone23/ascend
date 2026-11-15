@@ -54,4 +54,23 @@ export async function initializeDatabase() {
       FOREIGN KEY(habit_id) REFERENCES habits(id) ON DELETE CASCADE
     );
   `);
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS goals (
+      id         TEXT PRIMARY KEY NOT NULL,
+      title      TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS goal_steps (
+      id         TEXT PRIMARY KEY NOT NULL,
+      goal_id    TEXT NOT NULL,
+      title      TEXT NOT NULL,
+      done       INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,                      -- also the roadmap order
+      FOREIGN KEY(goal_id) REFERENCES goals(id) ON DELETE CASCADE
+    );
+  `);
 }
