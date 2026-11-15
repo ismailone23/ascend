@@ -1,6 +1,5 @@
 import { useColors } from "@/hooks/useColors";
 import { Habit } from "@/types/habit";
-import { HabitStatsResult } from "@/repositories/log.repository";
 import { Octicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 import ThemedText from "@/components/ThemedText";
@@ -8,53 +7,26 @@ import { getFrequencyLabel, formatDate } from "@/lib/habit-utils";
 
 interface InfoPillsProps {
   habit: Habit;
-  stats: HabitStatsResult;
 }
 
-export default function InfoPills({ habit, stats }: InfoPillsProps) {
+export default function InfoPills({ habit }: InfoPillsProps) {
   const colors = useColors();
   const frequencyLabel = getFrequencyLabel(habit, "Daily");
-  const goal = habit.streakGoal;
-  const goalReached = goal > 0 && stats.currentStreak >= goal;
-  const streakLabel = goalReached
-    ? `${stats.currentStreak} day streak, goal reached`
-    : goal > 0
-      ? `${stats.currentStreak} of ${goal} day streak`
-      : `${stats.currentStreak} day streak`;
 
   return (
-    <View style={styles.pillRow} accessibilityRole="list" accessibilityLabel="Habit details">
-      <View
-        accessible
-        accessibilityLabel={streakLabel}
-        style={[styles.pill, { backgroundColor: `${colors.primary}12` }]}
-      >
-        <Octicons
-          name={goalReached ? "trophy" : "flame"}
-          size={13}
-          color={colors.primary}
-        />
-        <ThemedText style={[styles.pillText, { color: colors.primary }]}>
-          {streakLabel}
-        </ThemedText>
-      </View>
+    <View
+      style={styles.pillRow}
+      accessibilityRole="list"
+      accessibilityLabel="Habit details"
+    >
       {habit.dailyGoal > 1 ? (
         <View
           accessible
           accessibilityLabel={`${habit.dailyGoal} times daily`}
-          style={[
-            styles.pill,
-            { backgroundColor: `${colors.textMuted}15` },
-          ]}
+          style={[styles.pill, { backgroundColor: `${colors.textMuted}15` }]}
         >
-          <Octicons
-            name="iterations"
-            size={12}
-            color={colors.textMuted}
-          />
-          <ThemedText
-            style={[styles.pillText, { color: colors.textMuted }]}
-          >
+          <Octicons name="iterations" size={12} color={colors.textMuted} />
+          <ThemedText style={[styles.pillText, { color: colors.textMuted }]}>
             {habit.dailyGoal}x daily
           </ThemedText>
         </View>
@@ -63,15 +35,10 @@ export default function InfoPills({ habit, stats }: InfoPillsProps) {
         <View
           accessible
           accessibilityLabel={`Frequency: ${frequencyLabel}`}
-          style={[
-            styles.pill,
-            { backgroundColor: `${colors.textMuted}15` },
-          ]}
+          style={[styles.pill, { backgroundColor: `${colors.textMuted}15` }]}
         >
           <Octicons name="sync" size={12} color={colors.textMuted} />
-          <ThemedText
-            style={[styles.pillText, { color: colors.textMuted }]}
-          >
+          <ThemedText style={[styles.pillText, { color: colors.textMuted }]}>
             {frequencyLabel}
           </ThemedText>
         </View>
@@ -79,15 +46,10 @@ export default function InfoPills({ habit, stats }: InfoPillsProps) {
       <View
         accessible
         accessibilityLabel={`Created since ${formatDate(habit.createdAt)}`}
-        style={[
-          styles.pill,
-          { backgroundColor: `${colors.textMuted}15` },
-        ]}
+        style={[styles.pill, { backgroundColor: `${colors.textMuted}15` }]}
       >
         <Octicons name="calendar" size={12} color={colors.textMuted} />
-        <ThemedText
-          style={[styles.pillText, { color: colors.textMuted }]}
-        >
+        <ThemedText style={[styles.pillText, { color: colors.textMuted }]}>
           Since {formatDate(habit.createdAt)}
         </ThemedText>
       </View>

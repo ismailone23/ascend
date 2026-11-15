@@ -5,12 +5,11 @@ import { useHabitStore } from "@/store/habit.store";
 import { Habit } from "@/types/habit";
 import { Octicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -19,6 +18,7 @@ import {
   Gesture,
   GestureDetector,
   GestureHandlerRootView,
+  ScrollView,
 } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -32,7 +32,7 @@ const SPRING = { dampingRatio: 1, duration: 350 };
 import CompletionHeatmap from "./habit-detail/CompletionHeatmap";
 import DetailHeader from "./habit-detail/DetailHeader";
 import InfoPills from "./habit-detail/InfoPills";
-import StatCard from "./habit-detail/StatCard";
+import HabitStats from "./habit-detail/HabitStats";
 
 type Props = {
   habit: Habit | null;
@@ -70,13 +70,24 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
     });
   };
 
+  // The whole sheet can be dragged down to close, not only its handle. The
+  // list inside keeps scrolling: the sheet only follows a drag that starts
+  // with the list at its top.
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useSharedValue(0);
+  const atTop = useSharedValue(true);
   const drag = Gesture.Pan()
+    .activeOffsetY(8) // downward only
+    .failOffsetX([-16, 16]) // leave sideways drags to the heatmap
+    .simultaneousWithExternalGesture(scrollRef as any)
+    .onStart(() => {
+      atTop.value = scrollY.value <= 0;
+    })
     .onUpdate((e) => {
-      // Follows the finger down; resists being pulled up past its resting place.
-      sheetY.value =
-        e.translationY > 0 ? e.translationY : e.translationY * 0.15;
+      if (atTop.value) sheetY.value = Math.max(e.translationY, 0);
     })
     .onEnd((e) => {
+      if (!atTop.value) return;
       // Judge by where the drag is heading, so a quick flick down closes it.
       if (e.translationY + e.velocityY * 0.1 > 140) runOnJS(dismiss)();
       else sheetY.value = withSpring(0, SPRING);
@@ -152,104 +163,96 @@ export default function HabitDetailModal({ habit, visible, onClose }: Props) {
           accessibilityLabel="Close"
         />
 
-        <Animated.View
-          style={[
-            styles.sheet,
-            { backgroundColor: colors.background },
-            sheetStyle,
-          ]}
-        >
-          {/* Handle: drag down to close */}
-          <GestureDetector gesture={drag}>
+        <GestureDetector gesture={drag}>
+          <Animated.View
+            style={[
+              styles.sheet,
+              { backgroundColor: colors.background },
+              sheetStyle,
+            ]}
+          >
             <View style={styles.handleBar}>
               <View
                 style={[styles.handle, { backgroundColor: colors.indicator }]}
               />
             </View>
-          </GestureDetector>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {/* Header */}
-            <DetailHeader habit={habit} onClose={dismiss} />
-
-            {/* Info pills */}
-            <InfoPills habit={habit} stats={stats} />
-
-            {/* Stats grid */}
-            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-              Statistics
-            </ThemedText>
-
-            {loading ? (
-              <ThemedText
-                variant="muted"
-                style={{ textAlign: "center", paddingVertical: 20 }}
-              >
-                Loading stats…
-              </ThemedText>
-            ) : (
-              <View style={styles.statsGrid}>
-                <StatCard
-                  icon="flame"
-                  label="Current Streak"
-                  value={`${stats.currentStreak}d`}
-                  color={colors.primary}
-                />
-                <StatCard
-                  icon="trophy"
-                  label="Best Streak"
-                  value={`${stats.bestStreak}d`}
-                  color={colors.primary}
-                />
-                <StatCard
-                  icon="check-circle"
-                  label="Completions"
-                  value={stats.totalCompletions}
-                  color={colors.primary}
-                />
-                <StatCard
-                  icon="graph"
-                  label="Success Rate"
-                  value={`${stats.completionRate}%`}
-                  color={colors.primary}
-                />
-              </View>
-            )}
-
-            {/* Heatmap */}
-            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-              Last Year
-            </ThemedText>
-
-            <CompletionHeatmap data={progressData} loading={loading} />
-
-            {/* Actions */}
-            <ThemedText accessibilityRole="header" style={styles.sectionTitle}>
-              Actions
-            </ThemedText>
-
-            <Pressable
-              onPress={handleDelete}
-              accessibilityRole="button"
-              accessibilityLabel={`Delete habit: ${habit.title}`}
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: "rgba(239,68,68,0.1)",
-                  borderColor: "rgba(239,68,68,0.2)",
-                },
-              ]}
+            <ScrollView
+              ref={scrollRef}
+              onScroll={(e) => {
+                scrollY.value = e.nativeEvent.contentOffset.y;
+              }}
+              scrollEventThrottle={16}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
             >
-              <Octicons name="trash" size={18} color="#EF4444" />
-              <ThemedText style={[styles.actionText, { color: "#EF4444" }]}>
-                Delete Habit
+              {/* Header */}
+              <DetailHeader habit={habit} onClose={dismiss} />
+
+              {/* Info pills */}
+              <InfoPills habit={habit} />
+
+              {/* Stats grid */}
+              <ThemedText
+                accessibilityRole="header"
+                style={styles.sectionTitle}
+              >
+                Statistics
               </ThemedText>
-            </Pressable>
-          </ScrollView>
-        </Animated.View>
+
+              {loading ? (
+                <ThemedText
+                  variant="muted"
+                  style={{ textAlign: "center", paddingVertical: 20 }}
+                >
+                  Loading stats…
+                </ThemedText>
+              ) : (
+                <HabitStats
+                  habit={habit}
+                  stats={stats}
+                  progress={progressData}
+                />
+              )}
+
+              {/* Heatmap */}
+              <ThemedText
+                accessibilityRole="header"
+                style={styles.sectionTitle}
+              >
+                Last Year
+              </ThemedText>
+
+              <CompletionHeatmap data={progressData} loading={loading} />
+
+              {/* Actions */}
+              <ThemedText
+                accessibilityRole="header"
+                style={styles.sectionTitle}
+              >
+                Actions
+              </ThemedText>
+
+              <Pressable
+                onPress={handleDelete}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete habit: ${habit.title}`}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: "rgba(239,68,68,0.1)",
+                    borderColor: "rgba(239,68,68,0.2)",
+                  },
+                ]}
+              >
+                <Octicons name="trash" size={18} color="#EF4444" />
+                <ThemedText style={[styles.actionText, { color: "#EF4444" }]}>
+                  Delete Habit
+                </ThemedText>
+              </Pressable>
+            </ScrollView>
+          </Animated.View>
+        </GestureDetector>
       </GestureHandlerRootView>
     </Modal>
   );
@@ -293,13 +296,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 12,
-  },
-
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 24,
   },
 
   actionButton: {

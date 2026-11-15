@@ -1,7 +1,7 @@
 import type { DayOfWeek } from "../types/habit";
 import { toLocalDate } from "./date";
 
-const DAY_NAMES: DayOfWeek[] = [
+export const DAY_NAMES: DayOfWeek[] = [
   "Sun",
   "Mon",
   "Tue",
@@ -57,6 +57,34 @@ export function computeStats(
     totalCompletions: done.size,
     completionRate: due ? Math.round((done.size / due) * 100) : 0,
   };
+}
+
+/**
+ * How the last `span` days went: the days the habit was due and how many of
+ * them were completed. Days before the habit existed are left out, and today
+ * only counts once it is done.
+ */
+export function recentDays(
+  completed: Set<string>,
+  days: DayOfWeek[],
+  createdAt: string,
+  span = 30,
+  today = new Date(),
+) {
+  const start = toLocalDate(new Date(createdAt));
+  const day = new Date(today);
+  day.setHours(12);
+  let due = 0;
+  let done = 0;
+  for (let i = 0; i < span; i++, day.setDate(day.getDate() - 1)) {
+    const key = toLocalDate(day);
+    if (key < start) break;
+    const scheduled =
+      days.length === 0 || days.includes(DAY_NAMES[day.getDay()]);
+    if (completed.has(key)) done++;
+    if (completed.has(key) || (scheduled && i > 0)) due++;
+  }
+  return { due, done };
 }
 
 /** The streak goal is stored as text; older habits hold "Day", "Week" or "Month". */

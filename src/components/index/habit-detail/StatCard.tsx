@@ -7,6 +7,8 @@ interface StatCardProps {
   icon: keyof typeof Octicons.glyphMap;
   label: string;
   value: string | number;
+  /** A second line that puts the number in context. */
+  hint?: string;
   color: string;
 }
 
@@ -14,6 +16,7 @@ export default function StatCard({
   icon,
   label,
   value,
+  hint,
   color,
 }: StatCardProps) {
   const colors = useColors();
@@ -21,19 +24,29 @@ export default function StatCard({
     <View
       accessible
       accessibilityRole="summary"
-      accessibilityLabel={`${label}: ${value}`}
+      accessibilityLabel={`${label}: ${value}${hint ? `, ${hint}` : ""}`}
       style={[
         styles.statCard,
         { backgroundColor: colors.surface, borderColor: colors.border },
       ]}
     >
-      <View style={[styles.statIconWrap, { backgroundColor: `${color}18` }]} accessibilityElementsHidden>
+      <View
+        style={[styles.statIconWrap, { backgroundColor: `${color}18` }]}
+        accessibilityElementsHidden
+      >
         <Octicons name={icon} size={16} color={color} />
       </View>
-      <ThemedText style={styles.statValue} aria-hidden>{value}</ThemedText>
+      <ThemedText style={styles.statValue} aria-hidden>
+        {value}
+      </ThemedText>
       <ThemedText variant="muted" style={styles.statLabel} aria-hidden>
         {label}
       </ThemedText>
+      {hint ? (
+        <ThemedText variant="muted" style={styles.statHint} aria-hidden>
+          {hint}
+        </ThemedText>
+      ) : null}
     </View>
   );
 }
@@ -65,6 +78,11 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 11,
     fontWeight: "500",
+    marginTop: 2,
+  },
+
+  statHint: {
+    fontSize: 11,
     marginTop: 2,
   },
 });

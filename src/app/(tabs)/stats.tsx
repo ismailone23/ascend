@@ -4,7 +4,7 @@ import { OverallHeatmap } from "@/components/stats/OverallHeatmap";
 import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
-import { Habit } from "@/types/habit";
+import { DayOfWeek, Habit } from "@/types/habit";
 import { MaterialIcons, Octicons } from "@expo/vector-icons";
 import dayjs from "dayjs";
 import { router } from "expo-router";
@@ -24,53 +24,107 @@ export default function Stats() {
   const completedOn = (date: dayjs.Dayjs) =>
     appWideLogs[date.format("YYYY-MM-DD")] ?? 0;
 
+  // How many habits were due that day: scheduled for its weekday and already
+  // created. Never less than what was actually done.
+  const dueOn = (date: dayjs.Dayjs) =>
+    Math.max(
+      completedOn(date),
+      habits.filter(
+        (h) =>
+          (h.days.length === 0 ||
+            h.days.includes(date.format("ddd") as DayOfWeek)) &&
+          !date.isBefore(dayjs(h.createdAt), "day"),
+      ).length,
+    );
+
   const today = dayjs();
   const weekStart = today.startOf("week");
   const todayIndex = today.diff(weekStart, "day");
   const week = Array.from({ length: 7 }, (_, i) => {
     const date = weekStart.add(i, "day");
-    return { date, count: completedOn(date), future: i > todayIndex };
+    return {
+      date,
+      count: completedOn(date),
+      due: dueOn(date),
+      future: i > todayIndex,
+    };
   });
 
   // Compare like with like: the same weekdays of last week, not its full total.
   const elapsed = week.slice(0, todayIndex + 1);
   const thisWeek = elapsed.reduce((sum, d) => sum + d.count, 0);
+  const dueThisWeek = elapsed.reduce((sum, d) => sum + d.due, 0);
+  const leftToday = week[todayIndex].due - week[todayIndex].count;
   const lastWeek = elapsed.reduce(
     (sum, d) => sum + completedOn(d.date.subtract(7, "day")),
     0,
   );
   const change = thisWeek - lastWeek;
   const trend =
-    change === 0
-      ? "Same as this point last week"
-      : `${Math.abs(change)} ${change > 0 ? "more" : "fewer"} than this point last week`;
-  const barScale = Math.max(habits.length, ...week.map((d) => d.count), 1);
+    (leftToday > 0 ? `${leftToday} left today · ` : "") +
+    (change === 0
+      ? "same as this point last week"
+      : `${Math.abs(change)} ${change > 0 ? "more" : "fewer"} than this point last week`);
+  const barScale = Math.max(...week.map((d) => d.due), 1);
 
-  const totalCompletions = Object.values(stats).reduce(
-    (sum, s) => sum + s.totalCompletions,
-    0,
-  );
-  const longestStreak = Math.max(
-    0,
-    ...habits.map((h) => stats[h.id]?.currentStreak || 0),
-  );
-  const perfectDays = Object.values(appWideLogs).filter(
-    (count) => count >= habits.length,
-  ).length;
+  // The last 30 days, today left out until it is over: overall rate, days
+  // where everything due was done, and the weekday that goes best.
+  let done30 = 0;
+  let due30 = 0;
+  const byWeekday: Record<string, { done: number; due: number }> = {};
+  for (let i = 1; i <= 30; i++) {
+    const date = today.subtract(i, "day");
+    const due = dueOn(date);
+    if (due === 0) continue;
+    const done = completedOn(date);
+    done30 += done;
+    due30 += due;
+    const day = (byWeekday[date.format("dddd")] ??= { done: 0, due: 0 });
+    day.done += done;
+    day.due += due;
+  }
+  const rate = (d: { done: number; due: number }) => d.done / d.due;
+  const bestDay = Object.entries(byWeekday).sort(
+    (a, b) => rate(b[1]) - rate(a[1]),
+  )[0];
 
+  const perfectDays = Object.keys(appWideLogs).filter((key) => {
+    const date = dayjs(key);
+    return completedOn(date) >= dueOn(date);
+  }).length;
+
+  const streakHabit = [...habits].sort(
+    (a, b) =>
+      (stats[b.id]?.currentStreak || 0) - (stats[a.id]?.currentStreak || 0),
+  )[0];
+  const longestStreak = stats[streakHabit?.id]?.currentStreak || 0;
+
+  // Each tile says what the number is about, not only the number.
   const tiles = [
     {
       icon: "flame",
       value: plural(longestStreak, "day"),
-      label: "Longest current streak",
+      label:
+        longestStreak > 0 ? `Streak: ${streakHabit.title}` : "No streak yet",
     },
-    { icon: "star", value: String(perfectDays), label: "Perfect days" },
     {
-      icon: "check-circle",
-      value: String(totalCompletions),
-      label: "Completions, all time",
+      icon: "graph",
+      value: due30 ? `${Math.round((done30 / due30) * 100)}%` : "–",
+      label: due30 ? `Last 30 days, ${done30} of ${due30}` : "Last 30 days",
     },
-    { icon: "tasklist", value: String(habits.length), label: "Habits" },
+    {
+      icon: "star",
+      value: String(perfectDays),
+      label: "Perfect days, all due habits done",
+    },
+    {
+      icon: "calendar",
+      value: bestDay && bestDay[1].done > 0 ? bestDay[0] : "–",
+      label:
+        bestDay && bestDay[1].done > 0
+          ? `Your best day, ${Math.round(rate(bestDay[1]) * 100)}% done`
+          : "Your best day",
+    },
   ] as const;
 
   const rankedHabits = [...habits].sort(
@@ -130,15 +184,17 @@ export default function Stats() {
                 This week
               </ThemedText>
               <ThemedText style={styles.hero}>
-                {plural(thisWeek, "completion")}
+                {dueThisWeek > 0
+                  ? `${thisWeek} of ${dueThisWeek} done`
+                  : plural(thisWeek, "completion")}
               </ThemedText>
               <ThemedText variant="muted" style={styles.trend}>
                 {trend}
               </ThemedText>
 
-              {thisWeek + lastWeek > 0 && (
+              {barScale > 0 && (
                 <View style={styles.bars}>
-                  {week.map(({ date, count, future }) => {
+                  {week.map(({ date, count, due, future }) => {
                     const isToday = date.isSame(today, "day");
                     return (
                       <View
@@ -147,30 +203,40 @@ export default function Stats() {
                         accessible
                         accessibilityLabel={`${date.format("dddd")}: ${
                           future
-                            ? "not yet"
-                            : plural(count, "habit") + " completed"
+                            ? `${plural(due, "habit")} due`
+                            : `${count} of ${due} done`
                         }`}
                       >
                         {/* Only today is labelled; the rest read off the bars. */}
                         <ThemedText style={styles.barValue}>
-                          {isToday ? count : ""}
+                          {isToday ? `${count}/${due}` : ""}
                         </ThemedText>
+                        {/* The grey bar is what was due, the fill what got done. */}
                         <View style={styles.barTrack}>
                           <View
                             style={[
                               styles.bar,
                               {
                                 height: Math.max(
-                                  (count / barScale) * BAR_HEIGHT,
+                                  (due / barScale) * BAR_HEIGHT,
                                   3,
                                 ),
-                                backgroundColor:
-                                  count === 0 ? colors.border : colors.primary,
-                                opacity: isToday || count === 0 ? 1 : 0.55,
+                                backgroundColor: colors.border,
                               },
-                              future && { opacity: 0.4 },
+                              future && { opacity: 0.5 },
                             ]}
-                          />
+                          >
+                            <View
+                              style={[
+                                styles.barFill,
+                                {
+                                  height: due ? `${(count / due) * 100}%` : 0,
+                                  backgroundColor: colors.primary,
+                                  opacity: isToday ? 1 : 0.55,
+                                },
+                              ]}
+                            />
+                          </View>
                         </View>
                         <ThemedText
                           variant={isToday ? "body" : "muted"}
@@ -269,9 +335,13 @@ export default function Stats() {
                         />
                       </View>
                       <ThemedText variant="muted" style={styles.rowStreak}>
-                        {currentStreak > 0
-                          ? `${currentStreak}-day streak`
-                          : "No streak yet"}
+                        {habit.streakGoal > 0
+                          ? currentStreak >= habit.streakGoal
+                            ? `${currentStreak}-day streak, goal reached`
+                            : `${currentStreak} of ${habit.streakGoal} day streak goal`
+                          : currentStreak > 0
+                            ? `${currentStreak}-day streak`
+                            : "No streak yet"}
                       </ThemedText>
                     </View>
                     <MaterialIcons
@@ -349,6 +419,12 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: 16,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  barFill: {
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
   },

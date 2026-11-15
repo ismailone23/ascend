@@ -1,5 +1,5 @@
 // Self-check for streak.ts. Run: npx tsx src/lib/streak.check.ts
-import { computeStats, parseStreakGoal } from "./streak";
+import { computeStats, parseStreakGoal, recentDays } from "./streak";
 
 const same = (got: unknown, want: unknown) => {
   if (JSON.stringify(got) !== JSON.stringify(want))
@@ -31,5 +31,17 @@ same(computeStats([], ["Mon"], wed).currentStreak, 0);
 same(
   ["Day", "Week", "Month", "100", null].map(parseStreakGoal),
   [0, 7, 30, 100, 0],
+);
+// Last 30 days of a Mon/Wed/Fri habit made on Mon 2 Nov, seen on Wed 11 Nov:
+// due on 2, 4, 6, 9 (today is not over), done on two of them.
+same(
+  recentDays(
+    new Set(["2026-11-06", "2026-11-09"]),
+    ["Mon", "Wed", "Fri"],
+    "2026-11-02T08:00:00",
+    30,
+    wed,
+  ),
+  { due: 4, done: 2 },
 );
 console.log("streak ok");
