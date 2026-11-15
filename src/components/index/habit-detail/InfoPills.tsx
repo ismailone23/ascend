@@ -14,17 +14,28 @@ interface InfoPillsProps {
 export default function InfoPills({ habit, stats }: InfoPillsProps) {
   const colors = useColors();
   const frequencyLabel = getFrequencyLabel(habit, "Daily");
+  const goal = habit.streakGoal;
+  const goalReached = goal > 0 && stats.currentStreak >= goal;
+  const streakLabel = goalReached
+    ? `${stats.currentStreak} day streak, goal reached`
+    : goal > 0
+      ? `${stats.currentStreak} of ${goal} day streak`
+      : `${stats.currentStreak} day streak`;
 
   return (
     <View style={styles.pillRow} accessibilityRole="list" accessibilityLabel="Habit details">
       <View
         accessible
-        accessibilityLabel={`${stats.currentStreak} day streak`}
+        accessibilityLabel={streakLabel}
         style={[styles.pill, { backgroundColor: `${colors.primary}12` }]}
       >
-        <Octicons name="flame" size={13} color={colors.primary} />
+        <Octicons
+          name={goalReached ? "trophy" : "flame"}
+          size={13}
+          color={colors.primary}
+        />
         <ThemedText style={[styles.pillText, { color: colors.primary }]}>
-          {stats.currentStreak} day streak
+          {streakLabel}
         </ThemedText>
       </View>
       {habit.dailyGoal > 1 ? (

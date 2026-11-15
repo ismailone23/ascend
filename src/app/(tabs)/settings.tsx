@@ -17,7 +17,6 @@ export default function SettingsScreen() {
         flex: 1,
         backgroundColor: colors.background,
       }}
-
     >
       <ScrollView
         contentContainerStyle={{
@@ -43,7 +42,6 @@ export default function SettingsScreen() {
         <DataSettings />
       </ScrollView>
     </SafeAreaView>
-
   );
 }
 

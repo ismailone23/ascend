@@ -11,7 +11,7 @@ export type Habit = {
   icon: string;
   days: DayOfWeek[];
   dailyGoal: number;
-  streakGoal: "Day" | "Week" | "Month";
+  streakGoal: number; // target streak in scheduled days, 0 for none
   reminderEnabled: boolean;
   reminderTimes: string[]; // e.g. ["08:30 AM", "09:00 PM"]
   createdAt: ISODateTime;

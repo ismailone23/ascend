@@ -1,17 +1,13 @@
 import { db } from "@/db/sqlite";
-import { HabitStats } from "@/types/habit";
+import { DayOfWeek, HabitStats } from "@/types/habit";
 import { toLocalDate } from "@/lib/date";
+import { computeStats, HabitStatsResult } from "@/lib/streak";
+
+export type { HabitStatsResult };
 
 export type HabitLogRow = {
   date: string;
   completed: number;
-};
-
-export type HabitStatsResult = {
-  currentStreak: number;
-  bestStreak: number;
-  totalCompletions: number;
-  completionRate: number;
 };
 
 export const logRepository = {
@@ -109,150 +105,47 @@ export const logRepository = {
 
   async getHabitStats(habitId: string): Promise<HabitStatsResult> {
     try {
-      const rows = await db.getAllAsync<{ date: string }>(
-        `SELECT date FROM habit_logs
-         WHERE habit_id = ? AND completed = 1
-         ORDER BY date DESC`,
-        [habitId],
+      const [rows, habit] = await Promise.all([
+        db.getAllAsync<{ date: string }>(
+          `SELECT date FROM habit_logs WHERE habit_id = ? AND completed = 1`,
+          [habitId],
+        ),
+        db.getFirstAsync<{ days: string }>(
+          `SELECT days FROM habits WHERE id = ?`,
+          [habitId],
+        ),
+      ]);
+      return computeStats(
+        rows.map((r) => r.date),
+        JSON.parse(habit?.days || "[]"),
       );
-
-      const totalCompletions = rows.length;
-      if (totalCompletions === 0) {
-        return {
-          currentStreak: 0,
-          bestStreak: 0,
-          totalCompletions: 0,
-          completionRate: 0,
-        };
-      }
-
-      const dates = new Set(rows.map((r) => r.date));
-
-      let currentStreak = 0;
-      const today = new Date();
-      const todayStr = toLocalDate(today);
-
-      const checkDate = new Date(today);
-      if (!dates.has(todayStr)) {
-        checkDate.setDate(checkDate.getDate() - 1);
-      }
-
-      while (true) {
-        const dateStr = toLocalDate(checkDate);
-        if (dates.has(dateStr)) {
-          currentStreak++;
-          checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-          break;
-        }
-      }
-
-      const sortedDates = Array.from(dates).sort();
-      let bestStreak = 1;
-      let streak = 1;
-      for (let i = 1; i < sortedDates.length; i++) {
-        const prevDate = new Date(sortedDates[i - 1] + "T12:00:00");
-        prevDate.setDate(prevDate.getDate() + 1);
-        const expectedNext = toLocalDate(prevDate);
-
-        if (sortedDates[i] === expectedNext) {
-          streak++;
-          bestStreak = Math.max(bestStreak, streak);
-        } else {
-          streak = 1;
-        }
-      }
-
-      // Completion rate: completions / days since first completion
-      const firstDate = new Date(sortedDates[0] + "T12:00:00");
-      const daysSinceFirst =
-        Math.floor(
-          (today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
-        ) + 1;
-      const completionRate = Math.round(
-        (totalCompletions / Math.max(daysSinceFirst, 1)) * 100,
-      );
-
-      return { currentStreak, bestStreak, totalCompletions, completionRate };
     } catch (error) {
       if (__DEV__) console.warn("[LogRepo]", error);
-      return {
-        currentStreak: 0,
-        bestStreak: 0,
-        totalCompletions: 0,
-        completionRate: 0,
-      };
+      return computeStats([], []);
     }
   },
 
   async getAllHabitsStats(): Promise<Record<string, HabitStats>> {
     try {
-      const rows = await db.getAllAsync<{ habit_id: string; date: string }>(
-        `SELECT habit_id, date FROM habit_logs WHERE completed = 1 ORDER BY date DESC`,
-      );
+      const [rows, habits] = await Promise.all([
+        db.getAllAsync<{ habit_id: string; date: string }>(
+          `SELECT habit_id, date FROM habit_logs WHERE completed = 1`,
+        ),
+        db.getAllAsync<{ id: string; days: string }>(
+          `SELECT id, days FROM habits`,
+        ),
+      ]);
 
       const logsByHabit: Record<string, string[]> = {};
-      for (const row of rows) {
-        if (!logsByHabit[row.habit_id]) logsByHabit[row.habit_id] = [];
-        logsByHabit[row.habit_id].push(row.date);
-      }
+      for (const row of rows) (logsByHabit[row.habit_id] ??= []).push(row.date);
 
+      // Habits with no completions get no entry, as before.
       const stats: Record<string, HabitStats> = {};
-      const today = new Date();
-      const todayStr = toLocalDate(today);
-
-      for (const [habitId, datesArray] of Object.entries(logsByHabit)) {
-        const totalCompletions = datesArray.length;
-        const dates = new Set(datesArray);
-
-        let currentStreak = 0;
-        const checkDate = new Date(today);
-        if (!dates.has(todayStr)) {
-          checkDate.setDate(checkDate.getDate() - 1);
-        }
-
-        while (true) {
-          const dateStr = toLocalDate(checkDate);
-          if (dates.has(dateStr)) {
-            currentStreak++;
-            checkDate.setDate(checkDate.getDate() - 1);
-          } else {
-            break;
-          }
-        }
-
-        const sortedDates = Array.from(dates).sort();
-        let bestStreak = 1;
-        let streak = 1;
-        for (let i = 1; i < sortedDates.length; i++) {
-          const prevDate = new Date(sortedDates[i - 1] + "T12:00:00");
-          prevDate.setDate(prevDate.getDate() + 1);
-          if (sortedDates[i] === toLocalDate(prevDate)) {
-            streak++;
-            bestStreak = Math.max(bestStreak, streak);
-          } else {
-            streak = 1;
-          }
-        }
-
-        const firstDate = new Date(sortedDates[0] + "T12:00:00");
-        const daysSinceFirst =
-          Math.floor(
-            (today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
-          ) + 1;
-        const completionRate = Math.round(
-          (totalCompletions / Math.max(daysSinceFirst, 1)) * 100,
-        );
-
-        stats[habitId] = {
-          habitId,
-          currentStreak,
-          bestStreak,
-          totalCompletions,
-          completionRate,
-        };
+      for (const { id, days } of habits) {
+        if (!logsByHabit[id]) continue;
+        const habitDays: DayOfWeek[] = JSON.parse(days || "[]");
+        stats[id] = { habitId: id, ...computeStats(logsByHabit[id], habitDays) };
       }
-
       return stats;
     } catch (error) {
       if (__DEV__) console.warn("[LogRepo]", error);

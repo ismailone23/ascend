@@ -100,7 +100,7 @@ export default function Onboard() {
             style={[
               styles.primaryButtonText,
               {
-                color: colors.text,
+                color: colors.onPrimary,
               },
             ]}
           >

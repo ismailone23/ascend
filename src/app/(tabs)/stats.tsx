@@ -1,7 +1,7 @@
 import IconView from "@/components/IconView";
 import HabitDetailModal from "@/components/index/habit-detail";
-import ThemedText from "@/components/ThemedText";
 import { OverallHeatmap } from "@/components/stats/OverallHeatmap";
+import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
 import { Habit } from "@/types/habit";
@@ -98,11 +98,7 @@ export default function Stats() {
 
         {habits.length === 0 ? (
           <View style={styles.empty}>
-            <MaterialIcons
-              name="leaderboard"
-              size={56}
-              color={colors.icon}
-            />
+            <MaterialIcons name="leaderboard" size={56} color={colors.icon} />
             <ThemedText style={styles.emptyTitle}>
               Nothing to show yet
             </ThemedText>

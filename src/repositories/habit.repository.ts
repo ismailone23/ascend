@@ -1,4 +1,5 @@
 import { db } from "@/db/sqlite";
+import { parseStreakGoal } from "@/lib/streak";
 import { CreateHabitInput, Habit } from "@/types/habit";
 
 export const habitRepository = {
@@ -16,7 +17,7 @@ export const habitRepository = {
         icon: row.icon,
         days: row.days ? JSON.parse(row.days) : [],
         dailyGoal: row.daily_goal,
-        streakGoal: row.streak_goal ?? "Day",
+        streakGoal: parseStreakGoal(row.streak_goal),
         reminderEnabled: row.reminder_enabled === 1,
         reminderTimes: row.reminder_times ? JSON.parse(row.reminder_times) : [],
         createdAt: row.created_at,
@@ -75,7 +76,7 @@ export const habitRepository = {
           habit.icon,
           JSON.stringify(habit.days),
           habit.dailyGoal,
-          habit.streakGoal,
+          String(habit.streakGoal),
           habit.reminderEnabled ? 1 : 0,
           JSON.stringify(habit.reminderTimes),
           now,
