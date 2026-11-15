@@ -4,10 +4,12 @@ import HabitList from "@/components/index/habit-list";
 import HeaderIndex from "@/components/index/header-index";
 import ThemedText from "@/components/ThemedText";
 import ThemedView from "@/components/ThemedView";
+import { swipeHintSeenKey } from "@/constants/storagekeys";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
 import { DayOfWeek, Habit } from "@/types/habit";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -23,6 +25,19 @@ export default function Index() {
   useEffect(() => {
     loadHabits();
   }, []);
+
+  // The swipe hint shows until the first swipe, then never again.
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem(swipeHintSeenKey)
+      .then((seen) => setShowHint(seen !== "true"))
+      .catch(() => {});
+  }, []);
+  const hideHint = () => {
+    if (!showHint) return;
+    setShowHint(false);
+    AsyncStorage.setItem(swipeHintSeenKey, "true").catch(() => {});
+  };
 
   useEffect(() => {
     loadLogs(selectedDate.format("YYYY-MM-DD"));
@@ -54,35 +69,55 @@ export default function Index() {
               onSelectDate={setSelectedDate}
             />
           }
-          ListEmptyComponent={<EmptyIndex />}
+          ListEmptyComponent={<EmptyIndex hasHabits={habits.length > 0} />}
+          ListFooterComponent={
+            showHint && filteredHabits.length > 0 ? (
+              <ThemedText
+                variant="muted"
+                style={{ textAlign: "center", fontSize: 12, marginTop: 8 }}
+              >
+                Swipe right to log · left for details
+              </ThemedText>
+            ) : null
+          }
           renderItem={({ item }) => (
             <HabitList
               habit={item}
               selectedDate={selectedDate}
               onLongPress={() => setDetailHabit(item)}
+              onSwiped={hideHint}
             />
           )}
         />
 
         <Pressable
-          style={{
+          accessibilityRole="button"
+          style={({ pressed }) => ({
             position: "absolute",
             right: 20,
             bottom: 20,
-            paddingLeft: 10,
-            paddingRight: 18,
+            paddingLeft: 16,
+            paddingRight: 22,
+            gap: 6,
             height: 56,
-            borderRadius: 12,
+            borderRadius: 28,
             backgroundColor: colors.primary,
             alignItems: "center",
             flexDirection: "row",
-            elevation: 8,
-          }}
+            elevation: 6,
+            shadowColor: "#000",
+            shadowOpacity: 0.2,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
+            // Respond on touch-down, not on release.
+            transform: [{ scale: pressed ? 0.96 : 1 }],
+            opacity: pressed ? 0.85 : 1,
+          })}
           onPress={() => router.push("/create-habit")}
         >
-          <MaterialIcons name="add" size={20} color="#fff" />
+          <MaterialIcons name="add" size={22} color={colors.onPrimary} />
           <ThemedText
-            style={{ color: "#fff", fontWeight: "500", fontSize: 16 }}
+            style={{ color: colors.onPrimary, fontWeight: "600", fontSize: 16 }}
           >
             New Habit
           </ThemedText>

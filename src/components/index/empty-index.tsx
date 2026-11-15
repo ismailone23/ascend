@@ -5,7 +5,7 @@ import ThemedView from "../ThemedView";
 
 import { useColors } from "@/hooks/useColors";
 
-export default function EmptyIndex() {
+export default function EmptyIndex({ hasHabits }: { hasHabits: boolean }) {
   const colors = useColors();
 
   return (
@@ -17,16 +17,17 @@ export default function EmptyIndex() {
         paddingHorizontal: 32,
       }}
     >
-      <MaterialIcons name="wb-iridescent" size={80} color={colors.primary} />
+      <MaterialIcons name={hasHabits ? "event-available" : "wb-iridescent"} size={72} color={colors.primary} />
 
       <ThemedText
         style={{
-          fontSize: 28,
+          fontSize: 24,
           fontWeight: "700",
+          letterSpacing: -0.3,
           marginTop: 24,
         }}
       >
-        No Habits Yet!
+        {hasHabits ? "Nothing scheduled" : "No habits yet"}
       </ThemedText>
 
       <ThemedText
@@ -38,7 +39,9 @@ export default function EmptyIndex() {
           fontSize: 14,
         }}
       >
-        Start building better habits today.
+        {hasHabits
+          ? "No habits fall on this day. Swipe the week to look around."
+          : "Start building better habits today."}
       </ThemedText>
     </ThemedView>
   );

@@ -1,11 +1,12 @@
 import { habitRepository } from "@/repositories/habit.repository";
 import { logRepository } from "@/repositories/log.repository";
 import {
-    cancelHabitReminders,
-    requestPermissions,
-    scheduleHabitReminders,
+  cancelHabitReminders,
+  requestPermissions,
+  scheduleHabitReminders,
 } from "@/services/notificationService";
 import { CreateHabitInput, Habit, HabitStats, HabitStore } from "@/types/habit";
+import { refreshWidgets } from "@/widgets/widgets";
 import { create } from "zustand";
 
 type HabitStoreState = HabitStore & {
@@ -109,40 +110,37 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
   },
 
   async incrementProgress(habit: Habit, date: string) {
-    const state = get();
-    const currentLog = state.dailyLogs[habit.id] || {
+    const current = get().dailyLogs[habit.id] || {
       progress: 0,
       isCompleted: false,
     };
-    let newProgress = currentLog.progress + 1;
-    let isCompleted = newProgress >= habit.dailyGoal;
+    // A finished habit steps back by one (undo the last log) instead of
+    // wiping the whole day.
+    const progress = current.isCompleted
+      ? Math.min(current.progress, habit.dailyGoal) - 1
+      : current.progress + 1;
+    const next = { progress, isCompleted: progress >= habit.dailyGoal };
 
-    if (currentLog.isCompleted) {
-      newProgress = 0;
-      isCompleted = false;
-      await logRepository.deleteHabitLog(habit.id, date);
-    } else {
-      await logRepository.saveProgress(
-        habit.id,
-        date,
-        newProgress,
-        isCompleted,
-      );
+    // Show the result first; the database catches up behind it.
+    set({ dailyLogs: { ...get().dailyLogs, [habit.id]: next } });
+    try {
+      if (progress <= 0) {
+        await logRepository.deleteHabitLog(habit.id, date);
+      } else {
+        await logRepository.saveProgress(
+          habit.id,
+          date,
+          progress,
+          next.isCompleted,
+        );
+      }
+    } catch (error) {
+      if (__DEV__) console.warn("[HabitStore]", error);
+      await get().loadLogs(date); // the write failed: show what is really stored
     }
-
-    const habits = await habitRepository.getAll();
-    const logs = await logRepository.getLogsForDate(date);
-    const dailyLogs: Record<
-      string,
-      { progress: number; isCompleted: boolean }
-    > = {};
-    for (const log of logs) {
-      dailyLogs[log.habit_id] = {
-        progress: log.progress,
-        isCompleted: log.completed === 1,
-      };
-    }
-    set({ habits, dailyLogs });
     await get().loadAllStats();
   },
 }));
+
+// Any change to habits, logs or stats redraws the home-screen widgets.
+useHabitStore.subscribe(refreshWidgets);
