@@ -7,18 +7,19 @@ import ThemedText from "@/components/ThemedText";
 import ThemedView from "@/components/ThemedView";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+import { useKeyboardInset } from "@/hooks/useKeyboardInset";
 import { requestPermissions } from "@/services/notificationService";
 import { useHabitStore } from "@/store/habit.store";
 import { DayOfWeek } from "@/types/habit";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import dayjs from "dayjs";
+import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
-  Keyboard,
   Linking,
   Pressable,
   ScrollView,
@@ -76,22 +77,7 @@ export default function CreateHabit() {
   const [comment, setComment] = useState("");
   const expandAnim = useRef(new Animated.Value(0)).current;
 
-  // Edge-to-edge Android does not resize for the keyboard, and
-  // KeyboardAvoidingView leaves its padding behind after the keyboard closes,
-  // so the space is added and removed by hand.
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", (e) =>
-      setKeyboardHeight(e.endCoordinates.height),
-    );
-    const hide = Keyboard.addListener("keyboardDidHide", () =>
-      setKeyboardHeight(0),
-    );
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
+  const keyboardInset = useKeyboardInset();
 
   const toggleDay = useCallback((day: DayOfWeek) => {
     setSelectedDays((prev) => {
@@ -127,6 +113,7 @@ export default function CreateHabit() {
 
   const handleCreate = useCallback(async () => {
     if (!title.trim()) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     await addHabit({
       id: generateId(),
@@ -169,7 +156,7 @@ export default function CreateHabit() {
         style={{ flex: 1, backgroundColor: colors.background }}
         edges={["top"]}
       >
-        <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
+        <View {...keyboardInset}>
           <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
             <ThemedView style={{ flex: 1, padding: 20, gap: 20 }}>
               <View style={{ flexDirection: "row" }}>

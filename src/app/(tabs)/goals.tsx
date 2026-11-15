@@ -2,6 +2,7 @@ import FloatingButton from "@/components/FloatingButton";
 import GoalCard from "@/components/goals/GoalCard";
 import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
+import { useKeyboardInset } from "@/hooks/useKeyboardInset";
 import { goalRepository } from "@/repositories/goal.repository";
 import { Goal } from "@/types/goal";
 import { refreshWidgets } from "@/widgets/widgets";
@@ -14,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Goals() {
   const colors = useColors();
+  const keyboardInset = useKeyboardInset();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -76,66 +78,67 @@ export default function Goals() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={["top"]}
     >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-      >
-        <View style={styles.header}>
-          <ThemedText accessibilityRole="header" style={styles.title}>
-            Goals
-          </ThemedText>
-          <ThemedText variant="muted" style={styles.subtitle}>
-            Break a goal into steps and work through them.
-          </ThemedText>
-        </View>
-
-        {adding && (
-          <View
-            style={[
-              styles.newGoal,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <MaterialIcons name="add" size={22} color={colors.icon} />
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              onSubmitEditing={addGoal}
-              onBlur={() => !draft.trim() && setAdding(false)}
-              autoFocus
-              placeholder="Name your goal, e.g. Learn Spanish"
-              placeholderTextColor={colors.textMuted}
-              returnKeyType="done"
-              maxLength={80}
-              accessibilityLabel="New goal"
-              style={[styles.input, { color: colors.text }]}
-            />
-          </View>
-        )}
-
-        {goals.length === 0 ? (
-          <View style={styles.empty}>
-            <MaterialIcons name="flag" size={56} color={colors.icon} />
-            <ThemedText style={styles.emptyTitle}>No goals yet</ThemedText>
-            <ThemedText variant="muted" style={styles.emptyText}>
-              Tap New Goal, name it, then break it into a roadmap of small
-              steps.
+      <View {...keyboardInset}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <ThemedText accessibilityRole="header" style={styles.title}>
+              Goals
+            </ThemedText>
+            <ThemedText variant="muted" style={styles.subtitle}>
+              Break a goal into steps and work through them.
             </ThemedText>
           </View>
-        ) : (
-          <>
-            {active.map(card)}
-            {finished.length > 0 && (
-              <ThemedText variant="muted" style={styles.section}>
-                Completed
+
+          {adding && (
+            <View
+              style={[
+                styles.newGoal,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <MaterialIcons name="add" size={22} color={colors.icon} />
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                onSubmitEditing={addGoal}
+                onBlur={() => !draft.trim() && setAdding(false)}
+                autoFocus
+                placeholder="Name your goal, e.g. Learn Spanish"
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="done"
+                maxLength={80}
+                accessibilityLabel="New goal"
+                style={[styles.input, { color: colors.text }]}
+              />
+            </View>
+          )}
+
+          {goals.length === 0 ? (
+            <View style={styles.empty}>
+              <MaterialIcons name="flag" size={56} color={colors.icon} />
+              <ThemedText style={styles.emptyTitle}>No goals yet</ThemedText>
+              <ThemedText variant="muted" style={styles.emptyText}>
+                Tap New Goal, name it, then break it into a roadmap of small
+                steps.
               </ThemedText>
-            )}
-            {finished.map(card)}
-          </>
-        )}
-      </ScrollView>
+            </View>
+          ) : (
+            <>
+              {active.map(card)}
+              {finished.length > 0 && (
+                <ThemedText variant="muted" style={styles.section}>
+                  Completed
+                </ThemedText>
+              )}
+              {finished.map(card)}
+            </>
+          )}
+        </ScrollView>
+      </View>
 
       {!adding && (
         <FloatingButton label="New Goal" onPress={() => setAdding(true)} />
