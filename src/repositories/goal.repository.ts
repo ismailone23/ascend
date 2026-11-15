@@ -82,23 +82,24 @@ export const goalRepository = {
     ]);
   },
 
-  /** Reorders the roadmap by swapping two steps' positions. */
-  async swapSteps(a: string, b: string) {
+  /** Puts a goal's steps in the given order. */
+  async reorderSteps(ids: string[]) {
     await db.withTransactionAsync(async () => {
-      // Steps are ordered by created_at, so swapping those swaps the steps.
-      const rows = await db.getAllAsync<{ id: string; created_at: string }>(
-        `SELECT id, created_at FROM goal_steps WHERE id IN (?, ?)`,
-        [a, b],
+      // Steps are ordered by created_at, so the same timestamps are dealt out
+      // again in the new order.
+      const rows = await db.getAllAsync<{ created_at: string }>(
+        `SELECT created_at FROM goal_steps
+         WHERE id IN (${ids.map(() => "?").join(",")})
+         ORDER BY created_at ASC`,
+        ids,
       );
-      if (rows.length !== 2) return;
-      await db.runAsync(`UPDATE goal_steps SET created_at = ? WHERE id = ?`, [
-        rows[1].created_at,
-        rows[0].id,
-      ]);
-      await db.runAsync(`UPDATE goal_steps SET created_at = ? WHERE id = ?`, [
-        rows[0].created_at,
-        rows[1].id,
-      ]);
+      if (rows.length !== ids.length) return;
+      for (let i = 0; i < ids.length; i++) {
+        await db.runAsync(`UPDATE goal_steps SET created_at = ? WHERE id = ?`, [
+          rows[i].created_at,
+          ids[i],
+        ]);
+      }
     });
   },
 

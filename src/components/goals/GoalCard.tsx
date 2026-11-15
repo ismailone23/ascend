@@ -1,3 +1,4 @@
+import SortableRows from "@/components/goals/SortableRows";
 import IconView from "@/components/IconView";
 import IconPickerModal from "@/components/index/create-habit/IconPickerModal";
 import ThemedText from "@/components/ThemedText";
@@ -8,8 +9,15 @@ import { MaterialIcons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import * as Haptics from "expo-haptics";
-import { useState } from "react";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { useRef, useState } from "react";
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -81,14 +89,31 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
     run(goalRepository.addStep(goal.id, title));
   };
 
-  // Saves an edited name when its field loses focus; empty text is ignored.
-  const rename = (
-    text: string,
-    current: string,
-    save: (title: string) => Promise<unknown>,
-  ) => {
-    const title = text.trim();
-    if (title && title !== current) run(save(title));
+  // Names typed in edit mode and not saved yet, by goal or step id. They are
+  // saved when a field loses focus and when edit mode closes, because closing
+  // it removes the field before it can lose focus. Empty text is ignored.
+  const edits = useRef<Record<string, string>>({});
+  const saveEdits = () => {
+    for (const [id, text] of Object.entries(edits.current)) {
+      const title = text.trim();
+      if (!title) continue;
+      if (id === goal.id) {
+        if (title !== goal.title) run(goalRepository.rename(id, title));
+      } else if (title !== goal.steps.find((s) => s.id === id)?.title) {
+        run(goalRepository.renameStep(id, title));
+      }
+    }
+    edits.current = {};
+  };
+  const closeEdit = () => {
+    saveEdits();
+    Keyboard.dismiss(); // the field being typed in goes away with edit mode
+    setEditMode(false);
+  };
+
+  const reorder = (ids: string[]) => {
+    if (ids.join() !== goal.steps.map((s) => s.id).join())
+      run(goalRepository.reorderSteps(ids));
   };
 
   const confirmDelete = () => {
@@ -123,7 +148,7 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
     >
       <Pressable
         onPress={() => {
-          setEditMode(false);
+          closeEdit();
           onToggle();
         }}
         accessibilityRole="button"
@@ -300,11 +325,8 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
             </Pressable>
             <TextInput
               defaultValue={goal.title}
-              onEndEditing={(e) =>
-                rename(e.nativeEvent.text, goal.title, (title) =>
-                  goalRepository.rename(goal.id, title),
-                )
-              }
+              onChangeText={(text) => (edits.current[goal.id] = text)}
+              onEndEditing={saveEdits}
               maxLength={80}
               accessibilityLabel="Goal name"
               style={[
@@ -373,54 +395,37 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
               Steps
             </ThemedText>
           )}
-          {goal.steps.map((step, index) => (
-            <View key={step.id} style={styles.editRow}>
-              <TextInput
-                defaultValue={step.title}
-                onEndEditing={(e) =>
-                  rename(e.nativeEvent.text, step.title, (title) =>
-                    goalRepository.renameStep(step.id, title),
-                  )
-                }
-                maxLength={120}
-                accessibilityLabel={`Step ${index + 1}`}
-                style={[
-                  styles.field,
-                  styles.editField,
-                  { color: colors.text, backgroundColor: colors.background },
-                ]}
-              />
-              <IconButton
-                icon="arrow-upward"
-                label="Move step up"
-                disabled={index === 0}
-                onPress={() =>
-                  run(
-                    goalRepository.swapSteps(step.id, goal.steps[index - 1].id),
-                  )
-                }
-              />
-              <IconButton
-                icon="arrow-downward"
-                label="Move step down"
-                disabled={index === total - 1}
-                onPress={() =>
-                  run(
-                    goalRepository.swapSteps(step.id, goal.steps[index + 1].id),
-                  )
-                }
-              />
-              <IconButton
-                icon="delete-outline"
-                label="Delete step"
-                onPress={() => run(goalRepository.deleteStep(step.id))}
-              />
-            </View>
-          ))}
+          <SortableRows
+            ids={goal.steps.map((step) => step.id)}
+            rowHeight={52}
+            onReorder={reorder}
+            handleLabel={(index) => `Reorder step ${index + 1}`}
+            renderRow={(id, index) => (
+              <>
+                <TextInput
+                  defaultValue={goal.steps[index].title}
+                  onChangeText={(text) => (edits.current[id] = text)}
+                  onEndEditing={saveEdits}
+                  maxLength={120}
+                  accessibilityLabel={`Step ${index + 1}`}
+                  style={[
+                    styles.field,
+                    styles.editField,
+                    { color: colors.text, backgroundColor: colors.background },
+                  ]}
+                />
+                <IconButton
+                  icon="delete-outline"
+                  label="Delete step"
+                  onPress={() => run(goalRepository.deleteStep(id))}
+                />
+              </>
+            )}
+          />
 
           <View style={styles.footer}>
             <TextButton label="Delete goal" onPress={confirmDelete} />
-            <TextButton label="Done" onPress={() => setEditMode(false)} />
+            <TextButton label="Done" onPress={closeEdit} />
           </View>
         </Animated.View>
       )}
@@ -616,14 +621,9 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 15,
   },
-  editRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    marginBottom: 8,
-  },
   editField: {
     flex: 1,
+    height: 44, // step rows are placed by a fixed height, see SortableRows
     marginBottom: 0,
     marginRight: 4,
   },
