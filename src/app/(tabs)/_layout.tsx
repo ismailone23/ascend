@@ -2,7 +2,9 @@ import ThemedText from "@/components/ThemedText";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import TopTabs, { MaterialTopTabBarProps } from "expo-router/js-top-tabs";
+import { useEffect, useRef } from "react";
 import { Pressable, StatusBar, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +19,13 @@ const ICONS: Record<string, "today" | "flag" | "stats-chart" | "settings"> = {
 function TabBar({ state, descriptors, navigation }: MaterialTopTabBarProps) {
   const colors = useColors();
   const { bottom } = useSafeAreaInsets();
+
+  // A tick whenever the tab changes, by tap or by swipe, but not at launch.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (mounted.current) Haptics.selectionAsync();
+    mounted.current = true;
+  }, [state.index]);
 
   return (
     <View
@@ -78,6 +87,7 @@ export default function TabsLayout() {
         tabBarPosition="bottom"
         tabBar={(props: MaterialTopTabBarProps) => <TabBar {...props} />}
         screenOptions={{
+          lazy: true, // a tab is built when first opened, not at launch
           sceneStyle: { backgroundColor: colors.background },
         }}
       >

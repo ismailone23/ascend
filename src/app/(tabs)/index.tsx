@@ -5,16 +5,18 @@ import HabitList from "@/components/index/habit-list";
 import HeaderIndex from "@/components/index/header-index";
 import ThemedText from "@/components/ThemedText";
 import ThemedView from "@/components/ThemedView";
-import { swipeHintSeenKey } from "@/constants/storagekeys";
+import {
+  remindersRefreshedKey,
+  swipeHintSeenKey,
+} from "@/constants/storagekeys";
 import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
 import { DayOfWeek, Habit } from "@/types/habit";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable } from "react-native";
+import { FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
@@ -24,8 +26,14 @@ export default function Index() {
   const { loadHabits, loadLogs, habits, refreshReminders } = useHabitStore();
 
   useEffect(() => {
-    // Each launch rewrites the reminders, so their wording keeps changing.
-    loadHabits().then(() => refreshReminders());
+    // The first launch of each day rewrites the reminders, so their wording
+    // keeps changing. Rescheduling all of them is slow, so not every launch.
+    loadHabits().then(async () => {
+      const today = dayjs().format("YYYY-MM-DD");
+      if ((await AsyncStorage.getItem(remindersRefreshedKey)) === today) return;
+      await refreshReminders();
+      await AsyncStorage.setItem(remindersRefreshedKey, today);
+    });
   }, []);
 
   // The swipe hint shows until the first swipe, then never again.
