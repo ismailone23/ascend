@@ -1,3 +1,4 @@
+import FloatingButton from "@/components/FloatingButton";
 import EmptyIndex from "@/components/index/empty-index";
 import HabitDetailModal from "@/components/index/habit-detail";
 import HabitList from "@/components/index/habit-list";
@@ -90,38 +91,10 @@ export default function Index() {
           )}
         />
 
-        <Pressable
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            position: "absolute",
-            right: 20,
-            bottom: 20,
-            paddingLeft: 16,
-            paddingRight: 22,
-            gap: 6,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: colors.primary,
-            alignItems: "center",
-            flexDirection: "row",
-            elevation: 6,
-            shadowColor: "#000",
-            shadowOpacity: 0.2,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            // Respond on touch-down, not on release.
-            transform: [{ scale: pressed ? 0.96 : 1 }],
-            opacity: pressed ? 0.85 : 1,
-          })}
+        <FloatingButton
+          label="New Habit"
           onPress={() => router.push("/create-habit")}
-        >
-          <MaterialIcons name="add" size={22} color={colors.onPrimary} />
-          <ThemedText
-            style={{ color: colors.onPrimary, fontWeight: "600", fontSize: 16 }}
-          >
-            New Habit
-          </ThemedText>
-        </Pressable>
+        />
 
         <HabitDetailModal
           habit={detailHabit}

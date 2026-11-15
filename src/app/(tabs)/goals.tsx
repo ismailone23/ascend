@@ -1,3 +1,4 @@
+import FloatingButton from "@/components/FloatingButton";
 import GoalCard from "@/components/goals/GoalCard";
 import ThemedText from "@/components/ThemedText";
 import { useColors } from "@/hooks/useColors";
@@ -16,6 +17,7 @@ export default function Goals() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false); // the "New Goal" name field is showing
 
   const reload = useCallback(async () => {
     try {
@@ -47,12 +49,27 @@ export default function Goals() {
 
   const addGoal = async () => {
     const title = draft.trim();
+    setAdding(false);
     if (!title) return;
     setDraft("");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Open the new goal straight away: the next thing to do is add its steps.
     await run(goalRepository.create(title).then(setOpenId));
   };
+
+  const isFinished = (goal: Goal) =>
+    goal.steps.length > 0 && goal.steps.every((step) => step.done);
+  const active = goals.filter((goal) => !isFinished(goal));
+  const finished = goals.filter(isFinished);
+  const card = (goal: Goal) => (
+    <GoalCard
+      key={goal.id}
+      goal={goal}
+      open={openId === goal.id}
+      onToggle={() => setOpenId(openId === goal.id ? null : goal.id)}
+      run={run}
+    />
+  );
 
   return (
     <SafeAreaView
@@ -70,51 +87,59 @@ export default function Goals() {
             Goals
           </ThemedText>
           <ThemedText variant="muted" style={styles.subtitle}>
-            Pick a skill, map the steps, tick them off.
+            Break a goal into steps and work through them.
           </ThemedText>
         </View>
 
-        <View
-          style={[
-            styles.newGoal,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <MaterialIcons name="add" size={22} color={colors.icon} />
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            onSubmitEditing={addGoal}
-            placeholder="What do you want to learn?"
-            placeholderTextColor={colors.textMuted}
-            returnKeyType="done"
-            maxLength={80}
-            accessibilityLabel="New goal"
-            style={[styles.input, { color: colors.text }]}
-          />
-        </View>
+        {adding && (
+          <View
+            style={[
+              styles.newGoal,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <MaterialIcons name="add" size={22} color={colors.icon} />
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={addGoal}
+              onBlur={() => !draft.trim() && setAdding(false)}
+              autoFocus
+              placeholder="Name your goal, e.g. Learn Spanish"
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
+              maxLength={80}
+              accessibilityLabel="New goal"
+              style={[styles.input, { color: colors.text }]}
+            />
+          </View>
+        )}
 
         {goals.length === 0 ? (
           <View style={styles.empty}>
             <MaterialIcons name="flag" size={56} color={colors.icon} />
             <ThemedText style={styles.emptyTitle}>No goals yet</ThemedText>
             <ThemedText variant="muted" style={styles.emptyText}>
-              Name a skill above, like “Learn Spanish”, then break it into a
-              roadmap of small steps.
+              Tap New Goal, name it, then break it into a roadmap of small
+              steps.
             </ThemedText>
           </View>
         ) : (
-          goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              open={openId === goal.id}
-              onToggle={() => setOpenId(openId === goal.id ? null : goal.id)}
-              run={run}
-            />
-          ))
+          <>
+            {active.map(card)}
+            {finished.length > 0 && (
+              <ThemedText variant="muted" style={styles.section}>
+                Completed
+              </ThemedText>
+            )}
+            {finished.map(card)}
+          </>
         )}
       </ScrollView>
+
+      {!adding && (
+        <FloatingButton label="New Goal" onPress={() => setAdding(true)} />
+      )}
     </SafeAreaView>
   );
 }
@@ -125,7 +150,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 120, // room for the floating button
     gap: 12,
   },
   header: {
@@ -139,6 +164,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     marginTop: 4,
+  },
+  section: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginTop: 12,
+    marginLeft: 4,
   },
   newGoal: {
     flexDirection: "row",
