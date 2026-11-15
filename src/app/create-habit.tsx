@@ -219,7 +219,7 @@ export default function CreateHabit() {
                       <ThemedText
                         style={{
                           color: selectedDays.includes(value)
-                            ? "#fff"
+                            ? colors.onPrimary
                             : colors.text,
                           fontSize: 12,
                           textTransform: "capitalize",

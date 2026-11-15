@@ -39,17 +39,23 @@ export default function Switch({ value, onValueChange }: Props) {
 
   const trackBg = colorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.border, colors.primary],
+    outputRange: [colors.indicator, colors.primary],
   });
 
   return (
-    <Pressable onPress={toggle} hitSlop={8}>
+    <Pressable
+      onPress={toggle}
+      hitSlop={8}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+    >
       <Animated.View style={[styles.track, { backgroundColor: trackBg }]}>
         <Animated.View
           style={[
             styles.thumb,
             {
-              backgroundColor: "#FFFFFF",
+              // White on the black "on" track in light mode; dark on white in dark mode.
+              backgroundColor: value ? colors.onPrimary : "#FFFFFF",
               transform: [{ translateX }],
             },
           ]}

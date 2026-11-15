@@ -7,14 +7,17 @@ export const Colors = {
     text: "#1F1F1F",
     textMuted: "#737373",
 
-    primary: "#C56B6B",
-    primaryLight: "#D98A8A",
-    primaryDark: "#A85757",
+    // Black and white only: the accent is plain black.
+    primary: "#111111",
+    primaryLight: "#404040",
+    primaryDark: "#000000",
+    onPrimary: "#FFFFFF", // text and icons on a primary fill
+    icon: "#4A4A4A", // softer than pure black
 
     border: "#E5E5E5",
 
     indicator: "#D4D4D4",
-    indicatorActive: "#C56B6B",
+    indicatorActive: "#111111",
 
     success: "#6B9E7A",
     warning: "#D9A441",
@@ -29,14 +32,16 @@ export const Colors = {
     text: "#F5F5F5",
     textMuted: "#A3A3A3",
 
-    primary: "#D98A8A",
-    primaryLight: "#E7A8A8",
-    primaryDark: "#C56B6B",
+    primary: "#FFFFFF",
+    primaryLight: "#FFFFFF",
+    primaryDark: "#D4D4D4",
+    onPrimary: "#111111",
+    icon: "#C8C8C8",
 
     border: "#333333",
 
     indicator: "#4D4D4D",
-    indicatorActive: "#D98A8A",
+    indicatorActive: "#FFFFFF",
 
     success: "#7FB08E",
     warning: "#E0B85A",
