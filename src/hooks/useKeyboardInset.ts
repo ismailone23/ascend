@@ -14,9 +14,10 @@ export function useKeyboardInset() {
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", (e) =>
       // Only the part of this view the keyboard covers, so a tab bar below
-      // the view is not counted twice.
-      ref.current?.measureInWindow((_x, y, _width, height) =>
-        setInset(Math.max(0, y + height - e.endCoordinates.screenY)),
+      // the view is not counted twice. pageY, not measureInWindow: on Android
+      // that one leaves out the status bar and comes up short.
+      ref.current?.measure((_x, _y, _width, height, _pageX, pageY) =>
+        setInset(Math.max(0, pageY + height - e.endCoordinates.screenY)),
       ),
     );
     const hide = Keyboard.addListener("keyboardDidHide", () => setInset(0));
