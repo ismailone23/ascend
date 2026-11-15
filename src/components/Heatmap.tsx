@@ -70,7 +70,7 @@ export default function Heatmap({
     }
     // Handle empty
     if (!val || val === 0) {
-      return { fill: themeColors.border, fillOpacity: 0.12 };
+      return { fill: themeColors.border, fillOpacity: 0.6 };
     }
 
     // If value is a fractional ratio (0..1), map to opacity
@@ -181,7 +181,7 @@ export default function Heatmap({
                 key={i}
                 x={m.x}
                 y={10}
-                fontSize={10}
+                fontSize={11}
                 fill={colors.textMuted}
               >
                 {m.text}
@@ -195,7 +195,7 @@ export default function Heatmap({
                   key={`day-${d}`}
                   x={0}
                   y={18 + d * (CELL_SIZE + CELL_GAP) + CELL_SIZE - 2}
-                  fontSize={9}
+                  fontSize={10}
                   fill={colors.textMuted}
                 >
                   {label}
@@ -213,7 +213,7 @@ export default function Heatmap({
 
                 if (isFuture) {
                   fillColor = colors.border;
-                  fillOpacity = 0.12;
+                  fillOpacity = 0.6;
                 }
 
                 return (
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   legendText: {
-    fontSize: 10,
+    fontSize: 11,
     marginHorizontal: 4,
   },
   legendCell: {

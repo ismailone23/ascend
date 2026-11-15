@@ -1,26 +1,23 @@
-import { useColors } from "@/hooks/useColors";
-import { StyleSheet } from "react-native";
 import Heatmap from "@/components/Heatmap";
 
 type OverallHeatmapProps = {
-  logs: Record<string, number>; // date -> count
+  logs: Record<string, number>; // date -> habits completed that day
+  habitCount: number;
 };
 
-export function OverallHeatmap({ logs }: OverallHeatmapProps) {
+export function OverallHeatmap({ logs, habitCount }: OverallHeatmapProps) {
+  // Shade each day by the share of habits completed (0..1), so one habit out
+  // of five reads lighter than five out of five.
+  const shares: Record<string, number> = {};
+  for (const [date, count] of Object.entries(logs)) {
+    shares[date] = Math.min(count / Math.max(habitCount, 1), 1);
+  }
+
   return (
     <Heatmap
-      title="Contribution Graph"
-      data={logs}
-      legendValues={[0, 1, 2, 3, 4]}
-      containerStyle={styles.container}
+      title="Last 12 months"
+      data={shares}
+      legendValues={[0, 0.25, 0.5, 0.75, 1]}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-});
