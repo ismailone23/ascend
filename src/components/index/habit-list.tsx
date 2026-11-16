@@ -193,8 +193,10 @@ export default function HabitList({
         <AnimatedPressable
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onLongPress={handleLongPress}
-          delayLongPress={400}
+          // Holding the card drags it (see the home screen), so details are
+          // a swipe left, or this action for screen readers.
+          accessibilityActions={[{ name: "longpress", label: "Show details" }]}
+          onAccessibilityAction={handleLongPress}
           style={[
             cardStyle,
             styles.card,

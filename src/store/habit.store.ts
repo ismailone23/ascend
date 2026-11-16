@@ -18,6 +18,7 @@ type HabitStoreState = HabitStore & {
   loadAllStats: () => Promise<void>;
   updateHabitReminder: (habit: Habit) => Promise<void>;
   refreshReminders: (only?: Habit) => Promise<void>;
+  reorderHabits: (ids: string[]) => Promise<void>;
 };
 
 export const useHabitStore = create<HabitStoreState>((set, get) => ({
@@ -87,6 +88,24 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
     await habitRepository.delete(id);
     const habits = await habitRepository.getAll();
     set({ habits });
+  },
+
+  // `ids` may be only the habits on screen: they swap among the places they
+  // already hold, and the hidden ones stay put.
+  async reorderHabits(ids: string[]) {
+    const all = get().habits;
+    const moved = all
+      .filter((h) => ids.includes(h.id))
+      .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+    let next = 0;
+    const habits = all.map((h) => (ids.includes(h.id) ? moved[next++] : h));
+    set({ habits });
+    try {
+      await habitRepository.reorder(habits.map((h) => h.id));
+    } catch (error) {
+      if (__DEV__) console.warn("[HabitStore]", error);
+      set({ habits: await habitRepository.getAll() });
+    }
   },
 
   // Call this when user edits reminder times or toggles reminder on/off

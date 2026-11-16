@@ -20,6 +20,16 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Home screen order, set by dragging. Older installs lack the column.
+  const habitColumns = (
+    await db.getAllAsync<{ name: string }>(`PRAGMA table_info(habits)`)
+  ).map((column) => column.name);
+  if (!habitColumns.includes("position")) {
+    await db.execAsync(
+      `ALTER TABLE habits ADD COLUMN position INTEGER NOT NULL DEFAULT 0;`,
+    );
+  }
+
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS habit_logs (
       id           TEXT PRIMARY KEY NOT NULL,

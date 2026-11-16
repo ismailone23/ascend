@@ -7,7 +7,7 @@ export const habitRepository = {
     try {
       const rows = await db.getAllAsync<any>(`
         SELECT * FROM habits
-        ORDER BY created_at DESC
+        ORDER BY position ASC, created_at DESC
       `);
 
       return rows.map((row) => ({
@@ -65,9 +65,11 @@ export const habitRepository = {
         reminder_enabled,
         reminder_times,
         created_at,
-        updated_at
+        updated_at,
+        position
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          (SELECT COALESCE(MIN(position), 0) - 1 FROM habits))
         `,
         [
           habit.id,
@@ -86,6 +88,17 @@ export const habitRepository = {
     } catch (error) {
       if (__DEV__) console.warn("[HabitRepo]", error);
     }
+  },
+  /** Puts the habits in the given order, the first one on top. */
+  async reorder(ids: string[]) {
+    await db.withTransactionAsync(async () => {
+      for (let i = 0; i < ids.length; i++) {
+        await db.runAsync(`UPDATE habits SET position = ? WHERE id = ?`, [
+          i,
+          ids[i],
+        ]);
+      }
+    });
   },
   async delete(id: string) {
     await db.runAsync(

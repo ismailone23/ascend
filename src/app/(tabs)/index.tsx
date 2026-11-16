@@ -1,4 +1,5 @@
 import FloatingButton from "@/components/FloatingButton";
+import SortableRows from "@/components/goals/SortableRows";
 import EmptyIndex from "@/components/index/empty-index";
 import HabitDetailModal from "@/components/index/habit-detail";
 import HabitList from "@/components/index/habit-list";
@@ -9,21 +10,20 @@ import {
   remindersRefreshedKey,
   swipeHintSeenKey,
 } from "@/constants/storagekeys";
-import { useColors } from "@/hooks/useColors";
 import { useHabitStore } from "@/store/habit.store";
 import { DayOfWeek, Habit } from "@/types/habit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList } from "react-native";
+import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
-  const colors = useColors();
-  const { loadHabits, loadLogs, habits, refreshReminders } = useHabitStore();
+  const { loadHabits, loadLogs, habits, refreshReminders, reorderHabits } =
+    useHabitStore();
 
   useEffect(() => {
     // The first launch of each day rewrites the reminders, so their wording
@@ -62,9 +62,7 @@ export default function Index() {
   return (
     <ThemedView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
-        <FlatList
-          data={filteredHabits}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             flexGrow: 1,
@@ -73,32 +71,42 @@ export default function Index() {
             paddingBottom: 140,
             gap: 12,
           }}
-          ListHeaderComponent={
-            <HeaderIndex
-              selectedDate={selectedDate}
-              onSelectDate={setSelectedDate}
-            />
-          }
-          ListEmptyComponent={<EmptyIndex hasHabits={habits.length > 0} />}
-          ListFooterComponent={
-            showHint && filteredHabits.length > 0 ? (
-              <ThemedText
-                variant="muted"
-                style={{ textAlign: "center", fontSize: 12, marginTop: 8 }}
-              >
-                Swipe right to log · left for details
-              </ThemedText>
-            ) : null
-          }
-          renderItem={({ item }) => (
-            <HabitList
-              habit={item}
-              selectedDate={selectedDate}
-              onLongPress={() => setDetailHabit(item)}
-              onSwiped={hideHint}
+        >
+          <HeaderIndex
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+          {filteredHabits.length === 0 ? (
+            <EmptyIndex hasHabits={habits.length > 0} />
+          ) : (
+            // Press and hold a habit to drag it to a new place.
+            <SortableRows
+              ids={filteredHabits.map((h) => h.id)}
+              gap={12}
+              grab="hold"
+              onReorder={(ids) => {
+                if (ids.join() !== filteredHabits.map((h) => h.id).join())
+                  reorderHabits(ids);
+              }}
+              renderRow={(_id, index) => (
+                <HabitList
+                  habit={filteredHabits[index]}
+                  selectedDate={selectedDate}
+                  onLongPress={() => setDetailHabit(filteredHabits[index])}
+                  onSwiped={hideHint}
+                />
+              )}
             />
           )}
-        />
+          {showHint && filteredHabits.length > 0 && (
+            <ThemedText
+              variant="muted"
+              style={{ textAlign: "center", fontSize: 12, marginTop: 8 }}
+            >
+              Swipe right to log · left for details · hold to move
+            </ThemedText>
+          )}
+        </ScrollView>
 
         <FloatingButton
           label="New Habit"
