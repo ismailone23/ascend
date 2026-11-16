@@ -5,6 +5,7 @@ import { Animated, Pressable, StyleSheet } from "react-native";
 type Props = {
   value: boolean;
   onValueChange: (val: boolean) => void;
+  accessibilityLabel?: string;
 };
 
 const TRACK_WIDTH = 52;
@@ -13,7 +14,11 @@ const THUMB_SIZE = 22;
 const THUMB_PADDING = 4;
 const TRAVEL = TRACK_WIDTH - THUMB_SIZE - THUMB_PADDING * 2;
 
-export default function Switch({ value, onValueChange }: Props) {
+export default function Switch({
+  value,
+  onValueChange,
+  accessibilityLabel,
+}: Props) {
   const colors = useColors();
   const translateX = useRef(new Animated.Value(value ? TRAVEL : 0)).current;
   const colorAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -47,6 +52,7 @@ export default function Switch({ value, onValueChange }: Props) {
       onPress={toggle}
       hitSlop={8}
       accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: value }}
     >
       <Animated.View style={[styles.track, { backgroundColor: trackBg }]}>

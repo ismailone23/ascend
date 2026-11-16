@@ -3,10 +3,12 @@
 "use no memo";
 
 import { Colors } from "@/constants/colors";
+import { widgetHiddenKey } from "@/constants/storagekeys";
 import { initializeDatabase } from "@/db/schema";
 import { goalRepository } from "@/repositories/goal.repository";
 import { habitRepository } from "@/repositories/habit.repository";
 import { logRepository } from "@/repositories/log.repository";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { Platform } from "react-native";
 import {
@@ -34,22 +36,42 @@ type WidgetData = {
   goals: { title: string; done: number; total: number }[];
 };
 
+/** Ids of the habits and goals the user has taken off the widgets. */
+export async function loadWidgetHidden(): Promise<string[]> {
+  try {
+    const ids = JSON.parse(
+      (await AsyncStorage.getItem(widgetHiddenKey)) ?? "[]",
+    );
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveWidgetHidden(ids: string[]) {
+  await AsyncStorage.setItem(widgetHiddenKey, JSON.stringify(ids));
+  refreshWidgets();
+}
+
 async function loadData(): Promise<WidgetData> {
   // A widget can be drawn while the app is closed, before anything else has
   // opened the database.
   await initializeDatabase();
 
   const today = dayjs();
-  const [allHabits, logs, stats, goals] = await Promise.all([
+  const [allHabits, logs, stats, allGoals, hidden] = await Promise.all([
     habitRepository.getAll(),
     logRepository.getLogsForDate(today.format("YYYY-MM-DD")),
     logRepository.getAllHabitsStats(),
     goalRepository.getAll(),
+    loadWidgetHidden(),
   ]);
+  const shown = allHabits.filter((h) => !hidden.includes(h.id));
+  const goals = allGoals.filter((g) => !hidden.includes(g.id));
 
   const weekday = today.format("ddd");
   return {
-    habits: allHabits
+    habits: shown
       .filter((h) => (h.days as string[]).includes(weekday))
       .map((h) => {
         const log = logs.find((l) => l.habit_id === h.id);
@@ -60,7 +82,7 @@ async function loadData(): Promise<WidgetData> {
           done: log?.completed === 1,
         };
       }),
-    streak: Math.max(0, ...Object.values(stats).map((s) => s.currentStreak)),
+    streak: Math.max(0, ...shown.map((h) => stats[h.id]?.currentStreak ?? 0)),
     goals: goals.map((g) => ({
       title: g.title,
       done: g.steps.filter((s) => s.done).length,
