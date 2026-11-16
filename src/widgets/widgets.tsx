@@ -3,7 +3,7 @@
 "use no memo";
 
 import { Colors } from "@/constants/colors";
-import { widgetHiddenKey } from "@/constants/storagekeys";
+import { widgetItemsKey } from "@/constants/storagekeys";
 import { initializeDatabase } from "@/db/schema";
 import { goalRepository } from "@/repositories/goal.repository";
 import { habitRepository } from "@/repositories/habit.repository";
@@ -16,6 +16,7 @@ import {
   HexColor,
   requestWidgetUpdate,
   TextWidget,
+  WidgetInfo,
   WidgetRepresentation,
 } from "react-native-android-widget";
 
@@ -49,38 +50,44 @@ type WidgetData = {
   }[];
 };
 
-/** Ids of the habits and goals the user has taken off the widgets. */
-export async function loadWidgetHidden(): Promise<string[]> {
+/**
+ * The habits or goals a widget was set up to show, or null for a widget that
+ * was never set up (added before this existed): it shows them all.
+ */
+export async function loadWidgetItems(widgetId: number) {
   try {
     const ids = JSON.parse(
-      (await AsyncStorage.getItem(widgetHiddenKey)) ?? "[]",
+      (await AsyncStorage.getItem(widgetItemsKey + widgetId)) ?? "null",
     );
-    return Array.isArray(ids) ? ids : [];
+    return Array.isArray(ids) ? (ids as string[]) : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-export async function saveWidgetHidden(ids: string[]) {
-  await AsyncStorage.setItem(widgetHiddenKey, JSON.stringify(ids));
-  refreshWidgets();
+export async function saveWidgetItems(widgetId: number, ids: string[]) {
+  await AsyncStorage.setItem(widgetItemsKey + widgetId, JSON.stringify(ids));
 }
 
-async function loadData(): Promise<WidgetData> {
+export async function forgetWidget(widgetId: number) {
+  await AsyncStorage.removeItem(widgetItemsKey + widgetId);
+}
+
+async function loadData(chosen: string[] | null): Promise<WidgetData> {
   // A widget can be drawn while the app is closed, before anything else has
   // opened the database.
   await initializeDatabase();
 
   const today = dayjs();
-  const [allHabits, logs, stats, allGoals, hidden] = await Promise.all([
+  const [allHabits, logs, stats, allGoals] = await Promise.all([
     habitRepository.getAll(),
     logRepository.getLogsForDate(today.format("YYYY-MM-DD")),
     logRepository.getAllHabitsStats(),
     goalRepository.getAll(),
-    loadWidgetHidden(),
   ]);
-  const shown = allHabits.filter((h) => !hidden.includes(h.id));
-  const goals = allGoals.filter((g) => !hidden.includes(g.id));
+  const picked = (id: string) => chosen === null || chosen.includes(id);
+  const shown = allHabits.filter((h) => picked(h.id));
+  const goals = allGoals.filter((g) => picked(g.id));
 
   const weekday = today.format("ddd");
   return {
@@ -386,15 +393,15 @@ const RENDERERS: Record<
 
 /** Draws one widget from the current data, in both system themes. */
 export async function renderWidget(
-  name: WidgetName,
+  info: Pick<WidgetInfo, "widgetName" | "widgetId">,
 ): Promise<WidgetRepresentation> {
   let data: WidgetData = { habits: [], streak: 0, goals: [] };
   try {
-    data = await loadData();
+    data = await loadData(await loadWidgetItems(info.widgetId));
   } catch (error) {
     if (__DEV__) console.warn("[Widgets]", error);
   }
-  const render = RENDERERS[name];
+  const render = RENDERERS[info.widgetName as WidgetName];
   return {
     light: render(Colors.light as Palette, data),
     dark: render(Colors.dark as Palette, data),
@@ -407,7 +414,7 @@ export function refreshWidgets() {
   for (const { name } of WIDGETS) {
     requestWidgetUpdate({
       widgetName: name,
-      renderWidget: () => renderWidget(name),
+      renderWidget: (info) => renderWidget(info),
     }).catch((error) => {
       if (__DEV__) console.warn("[Widgets]", error);
     });

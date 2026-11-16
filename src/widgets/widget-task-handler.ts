@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import type { WidgetTaskHandlerProps } from "react-native-android-widget";
 import {
   COMPLETE_STEP,
+  forgetWidget,
   LOG_HABIT,
   refreshWidgets,
   renderWidget,
@@ -54,8 +55,13 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     } catch (error) {
       if (__DEV__) console.warn("[Widgets]", error);
     }
-    props.renderWidget(await renderWidget(name));
+    props.renderWidget(await renderWidget(props.widgetInfo));
     refreshWidgets(); // progress and streak widgets change too
+    return;
+  }
+
+  if (props.widgetAction === "WIDGET_DELETED") {
+    await forgetWidget(props.widgetInfo.widgetId).catch(() => {});
     return;
   }
 
@@ -65,6 +71,6 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     props.widgetAction === "WIDGET_UPDATE" ||
     props.widgetAction === "WIDGET_RESIZED"
   ) {
-    props.renderWidget(await renderWidget(name));
+    props.renderWidget(await renderWidget(props.widgetInfo));
   }
 }
