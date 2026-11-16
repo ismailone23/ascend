@@ -47,8 +47,9 @@ Productivity (or Health & Fitness)
 ## Graphics
 - App icon: store/icon-512.png
 - Feature graphic: store/feature-graphic.png
-- Phone screenshots: 2 to 8, taken on the current build (Home, Goals, Stats,
-  habit details, a widget). The ones in assets/screenshots are out of date.
+- Phone screenshots (1080x2392), in this order: assets/screenshots/
+  1-home, 3-goal-open, 4-stats, 6-habit-detail, 2-goals, 5-stats-year.
+  A widget shot would help too: add one on the home screen and capture it.
 
 ## Privacy policy URL
 https://github.com/ismailone23/ascend/blob/main/PRIVACY.md
