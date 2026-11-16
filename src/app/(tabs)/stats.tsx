@@ -17,7 +17,11 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export default function Stats() {
   const colors = useColors();
-  const { habits, stats, appWideLogs } = useHabitStore();
+  // One field at a time: the whole store also changes on every logged tap, and
+  // this tab stays mounted behind the others.
+  const habits = useHabitStore((s) => s.habits);
+  const stats = useHabitStore((s) => s.stats);
+  const appWideLogs = useHabitStore((s) => s.appWideLogs);
   const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
 
   // appWideLogs: date -> how many habits were completed that day.
@@ -26,16 +30,22 @@ export default function Stats() {
 
   // How many habits were due that day: scheduled for its weekday and already
   // created. Never less than what was actually done.
-  const dueOn = (date: dayjs.Dayjs) =>
-    Math.max(
-      completedOn(date),
-      habits.filter(
+  // Creation days are worked out once: this runs for every day of the year.
+  const since = habits.map((h) => ({
+    days: h.days,
+    from: dayjs(h.createdAt).format("YYYY-MM-DD"),
+  }));
+  const dueOn = (date: dayjs.Dayjs) => {
+    const key = date.format("YYYY-MM-DD");
+    const weekday = date.format("ddd") as DayOfWeek;
+    return Math.max(
+      appWideLogs[key] ?? 0,
+      since.filter(
         (h) =>
-          (h.days.length === 0 ||
-            h.days.includes(date.format("ddd") as DayOfWeek)) &&
-          !date.isBefore(dayjs(h.createdAt), "day"),
+          (h.days.length === 0 || h.days.includes(weekday)) && key >= h.from,
       ).length,
     );
+  };
 
   const today = dayjs();
   const weekStart = today.startOf("week");

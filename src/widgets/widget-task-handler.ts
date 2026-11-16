@@ -9,7 +9,7 @@ import {
   COMPLETE_STEP,
   forgetWidget,
   LOG_HABIT,
-  refreshWidgets,
+  redrawWidgets,
   renderWidget,
   WidgetName,
   WIDGETS,
@@ -56,7 +56,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
       if (__DEV__) console.warn("[Widgets]", error);
     }
     props.renderWidget(await renderWidget(props.widgetInfo));
-    refreshWidgets(); // progress and streak widgets change too
+    redrawWidgets(); // progress and streak widgets change too
     return;
   }
 

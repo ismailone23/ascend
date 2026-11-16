@@ -408,9 +408,21 @@ export async function renderWidget(
   };
 }
 
-/** Redraws every widget on the home screen. Call after the data changes. */
+let refreshQueued = false;
+
+/**
+ * Redraws every widget on the home screen. Call after the data changes. A
+ * burst of calls (one tap updates the store twice) redraws them once.
+ */
 export function refreshWidgets() {
-  if (Platform.OS !== "android") return;
+  if (Platform.OS !== "android" || refreshQueued) return;
+  refreshQueued = true;
+  setTimeout(redrawWidgets, 500);
+}
+
+/** Redraws every widget now, for code that may not live long enough to wait. */
+export function redrawWidgets() {
+  refreshQueued = false;
   for (const { name } of WIDGETS) {
     requestWidgetUpdate({
       widgetName: name,
