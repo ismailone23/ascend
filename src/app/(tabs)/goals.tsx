@@ -11,7 +11,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, TextInput, View } from "react-native";
+import {
+  AppState,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Goals() {
@@ -34,6 +40,12 @@ export default function Goals() {
   useFocusEffect(
     useCallback(() => {
       reload();
+      // A widget may have ticked off a step while the app was in the background.
+      const sub = AppState.addEventListener(
+        "change",
+        (state) => state === "active" && reload(),
+      );
+      return () => sub.remove();
     }, [reload]),
   );
 

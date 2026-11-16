@@ -75,7 +75,7 @@
             {
               "name": "TodayHabits",
               "label": "Today's habits",
-              "description": "Today's habits and how far along each one is",
+              "description": "Today's habits, tap one to log progress",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,
@@ -108,7 +108,7 @@
             {
               "name": "Goals",
               "label": "Goals",
-              "description": "Your goals and the steps completed",
+              "description": "Each goal's current step to tick off, and the next one",
               "minWidth": "250dp",
               "minHeight": "110dp",
               "targetCellWidth": 4,

@@ -16,14 +16,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import dayjs from "dayjs";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView } from "react-native";
+import { AppState, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
-  const { loadHabits, loadLogs, habits, refreshReminders, reorderHabits } =
-    useHabitStore();
+  const {
+    loadHabits,
+    loadLogs,
+    loadAllStats,
+    habits,
+    refreshReminders,
+    reorderHabits,
+  } = useHabitStore();
 
   useEffect(() => {
     // The first launch of each day rewrites the reminders, so their wording
@@ -51,6 +57,13 @@ export default function Index() {
 
   useEffect(() => {
     loadLogs(selectedDate.format("YYYY-MM-DD"));
+    // A widget may have logged progress while the app was in the background.
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active") return;
+      loadLogs(selectedDate.format("YYYY-MM-DD"));
+      loadAllStats();
+    });
+    return () => sub.remove();
   }, [selectedDate]);
 
   const weekday = selectedDate.format("ddd") as DayOfWeek;

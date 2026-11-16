@@ -1,3 +1,4 @@
+import { nextProgress } from "@/lib/habit-utils";
 import { habitRepository } from "@/repositories/habit.repository";
 import { logRepository } from "@/repositories/log.repository";
 import {
@@ -160,12 +161,12 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
       progress: 0,
       isCompleted: false,
     };
-    // A finished habit steps back by one (undo the last log) instead of
-    // wiping the whole day.
-    const progress = current.isCompleted
-      ? Math.min(current.progress, habit.dailyGoal) - 1
-      : current.progress + 1;
-    const next = { progress, isCompleted: progress >= habit.dailyGoal };
+    const next = nextProgress(
+      current.progress,
+      current.isCompleted,
+      habit.dailyGoal,
+    );
+    const { progress } = next;
 
     // Show the result first; the database catches up behind it.
     set({ dailyLogs: { ...get().dailyLogs, [habit.id]: next } });
