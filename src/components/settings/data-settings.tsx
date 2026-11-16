@@ -129,8 +129,9 @@ export default function DataSettings() {
         entering={FadeInDown.delay(300)}
         style={[styles.footnote, { color: colors.textMuted }]}
       >
-        Backups are encrypted and can only be opened by Ascend. Importing
-        replaces everything on this device.
+        Backups are encrypted for compatibility, but the key is included in
+        Ascend, so they are not secret from someone inspecting the app.
+        Importing replaces everything on this device.
       </Animated.Text>
     </>
   );

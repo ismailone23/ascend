@@ -36,7 +36,7 @@ HOME-SCREEN WIDGETS
 
 PRIVATE BY DESIGN
 • No account, no ads, no tracking
-• Your data never leaves your phone
+• Your data stays on your device unless you choose to export a backup
 • Export a backup file whenever you like, and restore it on a new phone
 
 Light and dark themes included.
