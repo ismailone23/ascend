@@ -184,13 +184,27 @@ export const useHabitStore = create<HabitStoreState>((set, get) => ({
     } catch (error) {
       if (__DEV__) console.warn("[HabitStore]", error);
       await get().loadLogs(date); // the write failed: show what is really stored
+      await get().loadAllStats();
+      return;
     }
-    await get().loadAllStats();
+    // Stats only count finished days, so a tap short of the goal changes none.
+    if (next.isCompleted === current.isCompleted) return;
+
+    // Only this habit's stats, and this day's count, can have moved.
+    const { stats, appWideLogs } = get();
+    const own = await logRepository.getHabitStats(habit.id);
+    const nextStats = { ...stats };
+    if (own.totalCompletions > 0)
+      nextStats[habit.id] = { habitId: habit.id, ...own };
+    else delete nextStats[habit.id]; // as loadAllStats: no completions, no entry
+    const count = (appWideLogs[date] ?? 0) + (next.isCompleted ? 1 : -1);
+    const nextLogs = { ...appWideLogs, [date]: count };
+    if (count <= 0) delete nextLogs[date];
+    set({ stats: nextStats, appWideLogs: nextLogs });
+
     // Finishing (or un-finishing) a habit changes its streak, so its
     // reminders are rewritten to match.
-    if (next.isCompleted !== current.isCompleted) {
-      await get().refreshReminders(habit);
-    }
+    await get().refreshReminders(habit);
   },
 }));
 

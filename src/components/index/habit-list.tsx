@@ -22,6 +22,7 @@ import Animated, {
 import { getFrequencyLabel } from "@/lib/habit-utils";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const EMPTY_LOG = { progress: 0, isCompleted: false };
 
 // How far a card must travel before letting go triggers its action.
 const THRESHOLD = 88;
@@ -49,8 +50,9 @@ export default function HabitList({
   onSwiped?: () => void;
 }) {
   const colors = useColors();
-  const { dailyLogs, incrementProgress } = useHabitStore();
-  const log = dailyLogs[habit.id] || { progress: 0, isCompleted: false };
+  // Only this habit's log: logging another habit leaves this card alone.
+  const log = useHabitStore((s) => s.dailyLogs[habit.id]) ?? EMPTY_LOG;
+  const incrementProgress = useHabitStore((s) => s.incrementProgress);
   const { isCompleted, progress } = log;
 
   const clampedProgress = Math.min(progress, habit.dailyGoal);

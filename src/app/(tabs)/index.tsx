@@ -22,14 +22,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Index() {
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [detailHabit, setDetailHabit] = useState<Habit | null>(null);
+  // Actions never change; of the data, Home only needs the habit list.
+  const habits = useHabitStore((s) => s.habits);
   const {
     loadHabits,
     loadLogs,
     loadAllStats,
-    habits,
     refreshReminders,
     reorderHabits,
-  } = useHabitStore();
+  } = useHabitStore.getState();
 
   useEffect(() => {
     // The first launch of each day rewrites the reminders, so their wording
