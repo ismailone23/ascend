@@ -52,7 +52,10 @@ Productivity (or Health & Fitness)
   A widget shot would help too: add one on the home screen and capture it.
 
 ## Privacy policy URL
-https://github.com/ismailone23/ascend/blob/main/PRIVACY.md
+https://ascend.ismailh.dev/privacy
+
+## Data deletion URL
+https://ascend.ismailh.dev/delete-data
 
 ## Data safety form
 - Does your app collect or share user data? **No**
