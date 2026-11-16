@@ -300,7 +300,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    paddingBottom: 12,
     gap: 12,
   },
   iconCircle: {
@@ -331,16 +330,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // Inset, so it clears the card's rounded corners.
+  // The card's bottom edge; its rounded corners clip the ends.
   progressBarBg: {
-    height: 4,
-    borderRadius: 2,
-    marginHorizontal: 16,
-    marginBottom: 14,
-    overflow: "hidden",
+    height: 3,
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 2,
   },
 });
