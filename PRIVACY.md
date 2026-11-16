@@ -43,4 +43,4 @@ a new date.
 
 ## Contact
 
-Questions: open an issue at https://github.com/ismailone23/ascend/issues
+Questions: email ismailhsan45@gmail.com or open an issue at https://github.com/ismailone23/ascend/issues

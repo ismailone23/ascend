@@ -51,6 +51,9 @@ Productivity (or Health & Fitness)
   1-home, 3-goal-open, 4-stats, 6-habit-detail, 2-goals, 5-stats-year.
   A widget shot would help too: add one on the home screen and capture it.
 
+## Contact email
+ismailhsan45@gmail.com
+
 ## Privacy policy URL
 https://ascend.ismailh.dev/privacy
 
