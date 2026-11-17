@@ -56,6 +56,8 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [pickingDate, setPickingDate] = useState(false);
   const [pickingIcon, setPickingIcon] = useState(false);
+  // Field to focus when edit mode opens from a long-press (goal or step id).
+  const [focusId, setFocusId] = useState<string | null>(null);
   const editing = open && editMode;
 
   const total = goal.steps.length;
@@ -111,6 +113,13 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
     setEditMode(false);
   };
 
+  const startEdit = (id: string | null) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFocusId(id);
+    setEditMode(true);
+    if (!open) onToggle();
+  };
+
   const reorder = (ids: string[]) => {
     if (ids.join() !== goal.steps.map((s) => s.id).join())
       run(goalRepository.reorderSteps(ids));
@@ -151,6 +160,8 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
           closeEdit();
           onToggle();
         }}
+        onLongPress={() => !editing && startEdit(goal.id)}
+        accessibilityHint="Long-press to edit"
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={`${goal.title}, ${done} of ${total} steps. ${summary}`}
@@ -202,6 +213,8 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
             <Pressable
               key={step.id}
               onPress={() => toggleStep(step)}
+              onLongPress={() => startEdit(step.id)}
+              accessibilityHint="Long-press to edit"
               accessibilityRole="checkbox"
               accessibilityState={{ checked: step.done }}
               accessibilityLabel={`Step ${index + 1}: ${step.title}`}
@@ -295,7 +308,7 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
 
           <View style={styles.footer}>
             <View />
-            <TextButton label="Edit" onPress={() => setEditMode(true)} />
+            <TextButton label="Edit" onPress={() => startEdit(null)} />
           </View>
         </Animated.View>
       )}
@@ -325,6 +338,7 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
             </Pressable>
             <TextInput
               defaultValue={goal.title}
+              autoFocus={focusId === goal.id}
               onChangeText={(text) => (edits.current[goal.id] = text)}
               onEndEditing={saveEdits}
               maxLength={80}
@@ -405,6 +419,7 @@ export default function GoalCard({ goal, open, onToggle, run }: Props) {
               <>
                 <TextInput
                   defaultValue={goal.steps[index].title}
+                  autoFocus={focusId === id}
                   onChangeText={(text) => (edits.current[id] = text)}
                   onEndEditing={saveEdits}
                   maxLength={120}
