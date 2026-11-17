@@ -20,6 +20,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.ismailone23.ascend",
+      "versionCode": 2,
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
@@ -33,6 +34,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/withAndroidUploadSigning",
       [
         "expo-build-properties",
         {
